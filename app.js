@@ -37,7 +37,7 @@ const state = {
 };
 
 function formatNearestThousand(value) {
-  return currency.format(Math.round(value / 1000) * 1000);
+  return `$${Math.round(value / 1000)}k`;
 }
 
 function calcOrdinaryTax(taxableOrdinary) {
