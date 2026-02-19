@@ -28,12 +28,14 @@ const currency = new Intl.NumberFormat("en-US", {
 
 const heatmapTable = document.getElementById("heatmapTable");
 const taxDueTable = document.getElementById("taxDueTable");
-const detailBody = document.getElementById("detailBody");
+const detailBodyA = document.getElementById("detailBodyA");
+const detailBodyB = document.getElementById("detailBodyB");
 
 const state = {
-  income: 800000,
-  stPct: 40,
-  heatmapSelection: { income: 800000, stPct: 40 }
+  selections: [
+    { income: 800000, stPct: 40 },
+    { income: 1200000, stPct: 60 }
+  ]
 };
 
 function formatNearestThousand(value) {
@@ -42,6 +44,40 @@ function formatNearestThousand(value) {
 
 function formatIncomeThousands(value) {
   return Math.round(value / 1000).toLocaleString("en-US");
+}
+
+function keyFor(income, stPct) {
+  return `${income}|${stPct}`;
+}
+
+function selectionIndex(income, stPct) {
+  const key = keyFor(income, stPct);
+  return state.selections.findIndex((s) => keyFor(s.income, s.stPct) === key);
+}
+
+function normalizeSelections() {
+  const seen = new Set();
+  state.selections = state.selections.filter((s) => {
+    if (!s) return false;
+    const key = keyFor(s.income, s.stPct);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  state.selections = state.selections.slice(0, 2);
+}
+
+function toggleSelection(income, stPct) {
+  const idx = selectionIndex(income, stPct);
+  if (idx >= 0) {
+    state.selections.splice(idx, 1);
+  } else if (state.selections.length < 2) {
+    state.selections.push({ income, stPct });
+  } else {
+    state.selections.shift();
+    state.selections.push({ income, stPct });
+  }
+  normalizeSelections();
 }
 
 function calcOrdinaryTax(taxableOrdinary) {
@@ -72,9 +108,7 @@ function calcLtcgTaxBreakdown(taxableOrdinary, taxableLtcg) {
   const atFifteen = Math.min(taxableLtcg - atZero, fifteenRoom);
 
   const atTwenty = Math.max(0, taxableLtcg - atZero - atFifteen);
-  const tax = atFifteen * 0.15 + atTwenty * 0.2;
-
-  return { atZero, atFifteen, atTwenty, tax };
+  return { atZero, atFifteen, atTwenty, tax: atFifteen * 0.15 + atTwenty * 0.2 };
 }
 
 function calcScenario(totalIncome, stPct) {
@@ -126,6 +160,13 @@ function colorForRate(rate, min, max) {
   return `hsl(${hue}, 65%, 55%)`;
 }
 
+function selectionClass(income, stPct) {
+  const idx = selectionIndex(income, stPct);
+  if (idx === 0) return " sel-1";
+  if (idx === 1) return " sel-2";
+  return "";
+}
+
 function renderHeatmap() {
   if (!heatmapTable) return;
   const values = [];
@@ -152,12 +193,8 @@ function renderHeatmap() {
       ${INCOME_BUCKETS.map((income) => {
         const row = STCG_POINTS.map((stPct) => {
           const scenario = calcScenario(income, stPct);
-          const active =
-            state.heatmapSelection &&
-            state.heatmapSelection.income === income &&
-            state.heatmapSelection.stPct === stPct;
-
-          return `<td class="heat-cell${active ? " active" : ""}" data-income="${income}" data-stpct="${stPct}" style="background:${colorForRate(scenario.effectiveRate, min, max)}">${Math.round(scenario.effectiveRate)}%</td>`;
+          const cls = `heat-cell${selectionClass(income, stPct)}`;
+          return `<td class="${cls}" data-income="${income}" data-stpct="${stPct}" style="background:${colorForRate(scenario.effectiveRate, min, max)}">${Math.round(scenario.effectiveRate)}%</td>`;
         }).join("");
 
         return `<tr><td class="row-label">${formatIncomeThousands(income)}</td>${row}</tr>`;
@@ -169,19 +206,13 @@ function renderHeatmap() {
 
   heatmapTable.querySelectorAll(".heat-cell").forEach((cell) => {
     cell.addEventListener("click", () => {
-      const income = Number(cell.dataset.income);
-      const stPct = Number(cell.dataset.stpct);
-      state.income = income;
-      state.stPct = stPct;
-      state.heatmapSelection = { income, stPct };
-      renderHeatmap();
-      renderTaxDueTable();
-      renderDetail();
+      toggleSelection(Number(cell.dataset.income), Number(cell.dataset.stpct));
+      refreshAll();
     });
   });
 }
 
-function renderTaxDueTable() {
+function renderAfterTaxMatrix() {
   if (!taxDueTable) return;
   const thead = `
     <thead>
@@ -197,94 +228,85 @@ function renderTaxDueTable() {
       ${INCOME_BUCKETS.map((income) => {
         const row = STCG_POINTS.map((stPct) => {
           const scenario = calcScenario(income, stPct);
-          const active =
-            state.heatmapSelection &&
-            state.heatmapSelection.income === income &&
-            state.heatmapSelection.stPct === stPct;
-          return `<td class="tax-cell${active ? " active" : ""}">${formatNearestThousand(scenario.afterTax)}</td>`;
+          const cls = `tax-cell${selectionClass(income, stPct)}`;
+          return `<td class="${cls}" data-income="${income}" data-stpct="${stPct}">${formatNearestThousand(scenario.afterTax)}</td>`;
         }).join("");
-
         return `<tr><td class="row-label">${formatIncomeThousands(income)}</td>${row}</tr>`;
       }).join("")}
     </tbody>
   `;
 
   taxDueTable.innerHTML = thead + tbody;
-}
 
-function renderDetail() {
-  if (!detailBody) return;
-  const scenario = calcScenario(state.income, state.stPct);
-
-  const rows = [
-    [
-      "Scenario Income (editable)",
-      `<input id="detailIncome" class="detail-input" type="number" min="1" step="1000" value="${Math.round(scenario.income)}" />`
-    ],
-    [
-      "Scenario STCG % (editable)",
-      `<input id="detailStPct" class="detail-input" type="number" min="0" max="100" step="1" value="${Math.round(scenario.stPct)}" />`
-    ],
-    ["Action", `<button id="recalcBtn" class="btn">Recalculate</button>`],
-    ["Selected Income", currency.format(Math.round(scenario.income))],
-    ["STCG %", `${Math.round(scenario.stPct)}%`],
-    ["LTCG %", `${Math.round(scenario.ltcgPct)}%`],
-    ["Short-Term Amount", currency.format(Math.round(scenario.stcg))],
-    ["Long-Term Amount", currency.format(Math.round(scenario.ltcg))],
-    ["Standard Deduction (MFJ 2026)", currency.format(STD_DEDUCTION)],
-    ["Taxable Income", currency.format(Math.round(scenario.taxableIncome))],
-    ["Taxable Ordinary Income", currency.format(Math.round(scenario.taxableOrdinary))],
-    ["Taxable LTCG", currency.format(Math.round(scenario.taxableLtcg))],
-    ["LTCG in 0% bucket (stacked)", currency.format(Math.round(scenario.ltcgBreakdown.atZero))],
-    ["LTCG in 15% bucket (stacked)", currency.format(Math.round(scenario.ltcgBreakdown.atFifteen))],
-    ["LTCG in 20% bucket (stacked)", currency.format(Math.round(scenario.ltcgBreakdown.atTwenty))],
-    ["Ordinary Tax", currency.format(Math.round(scenario.ordinaryTax))],
-    ["LTCG Tax", currency.format(Math.round(scenario.ltcgTax))],
-    ["MAGI excess over $250,000", currency.format(Math.round(scenario.magiExcess))],
-    ["NII", currency.format(Math.round(scenario.nii))],
-    ["NIIT base = min(NII, MAGI excess)", currency.format(Math.round(scenario.niitBase))],
-    ["NIIT (3.8%)", currency.format(Math.round(scenario.niit))],
-    ["Total Federal Tax", currency.format(Math.round(scenario.totalTax))],
-    ["Effective Tax Rate", `${Math.round(scenario.effectiveRate)}%`],
-    ["After-Tax Income", currency.format(Math.round(scenario.afterTax))]
-  ];
-
-  detailBody.innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
-
-  document.getElementById("recalcBtn").addEventListener("click", () => {
-    const income = Number(document.getElementById("detailIncome").value);
-    const stPct = Number(document.getElementById("detailStPct").value);
-
-    state.income = Math.max(1, income || state.income);
-    state.stPct = Math.max(0, Math.min(100, stPct || 0));
-
-    const isHeatIncome = INCOME_BUCKETS.includes(state.income);
-    const isHeatPct = STCG_POINTS.includes(state.stPct);
-    state.heatmapSelection = isHeatIncome && isHeatPct
-      ? { income: state.income, stPct: state.stPct }
-      : null;
-
-    renderHeatmap();
-    renderTaxDueTable();
-    renderDetail();
+  taxDueTable.querySelectorAll(".tax-cell").forEach((cell) => {
+    cell.addEventListener("click", () => {
+      toggleSelection(Number(cell.dataset.income), Number(cell.dataset.stpct));
+      refreshAll();
+    });
   });
 }
 
-function boot() {
-  try {
-    renderHeatmap();
-    renderTaxDueTable();
-    renderDetail();
-  } catch (err) {
-    if (detailBody) {
-      detailBody.innerHTML = `<tr><td>Runtime error</td><td>${String(err)}</td></tr>`;
-    }
-    throw err;
+function renderScenarioDetails(slotIndex, targetBody, label) {
+  if (!targetBody) return;
+  const sel = state.selections[slotIndex];
+  if (!sel) {
+    targetBody.innerHTML = `<tr><td>${label}</td><td>No selection</td></tr>`;
+    return;
   }
+
+  const s = calcScenario(sel.income, sel.stPct);
+  const rows = [
+    ["Scenario Income (editable)", `<input id="detailIncome-${slotIndex}" class="detail-input" type="number" min="1" step="1000" value="${Math.round(s.income)}" />`],
+    ["Scenario STCG % (editable)", `<input id="detailStPct-${slotIndex}" class="detail-input" type="number" min="0" max="100" step="1" value="${Math.round(s.stPct)}" />`],
+    ["Action", `<button id="recalcBtn-${slotIndex}" class="btn">Recalculate</button>`],
+    ["Selected Income", currency.format(Math.round(s.income))],
+    ["STCG %", `${Math.round(s.stPct)}%`],
+    ["LTCG %", `${Math.round(s.ltcgPct)}%`],
+    ["Short-Term Amount", currency.format(Math.round(s.stcg))],
+    ["Long-Term Amount", currency.format(Math.round(s.ltcg))],
+    ["Taxable Income", currency.format(Math.round(s.taxableIncome))],
+    ["Taxable Ordinary Income", currency.format(Math.round(s.taxableOrdinary))],
+    ["Taxable LTCG", currency.format(Math.round(s.taxableLtcg))],
+    ["LTCG in 0% bucket", currency.format(Math.round(s.ltcgBreakdown.atZero))],
+    ["LTCG in 15% bucket", currency.format(Math.round(s.ltcgBreakdown.atFifteen))],
+    ["LTCG in 20% bucket", currency.format(Math.round(s.ltcgBreakdown.atTwenty))],
+    ["Ordinary Tax", currency.format(Math.round(s.ordinaryTax))],
+    ["LTCG Tax", currency.format(Math.round(s.ltcgTax))],
+    ["NIIT (3.8%)", currency.format(Math.round(s.niit))],
+    ["Total Federal Tax", currency.format(Math.round(s.totalTax))],
+    ["Effective Tax Rate", `${Math.round(s.effectiveRate)}%`],
+    ["After-Tax Income", currency.format(Math.round(s.afterTax))]
+  ];
+
+  targetBody.innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+
+  document.getElementById(`recalcBtn-${slotIndex}`).addEventListener("click", () => {
+    const income = Number(document.getElementById(`detailIncome-${slotIndex}`).value);
+    const stPct = Number(document.getElementById(`detailStPct-${slotIndex}`).value);
+
+    state.selections[slotIndex] = {
+      income: Math.max(1, income || sel.income),
+      stPct: Math.max(0, Math.min(100, stPct || 0))
+    };
+
+    normalizeSelections();
+    refreshAll();
+  });
+}
+
+function renderDetails() {
+  renderScenarioDetails(0, detailBodyA, "Scenario A");
+  renderScenarioDetails(1, detailBodyB, "Scenario B");
+}
+
+function refreshAll() {
+  renderHeatmap();
+  renderAfterTaxMatrix();
+  renderDetails();
 }
 
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", boot);
+  document.addEventListener("DOMContentLoaded", refreshAll);
 } else {
-  boot();
+  refreshAll();
 }
