@@ -37,7 +37,11 @@ const state = {
 };
 
 function formatNearestThousand(value) {
-  return `$${Math.round(value / 1000)}k`;
+  return Math.round(value / 1000).toLocaleString("en-US");
+}
+
+function formatIncomeThousands(value) {
+  return Math.round(value / 1000).toLocaleString("en-US");
 }
 
 function calcOrdinaryTax(taxableOrdinary) {
@@ -137,7 +141,7 @@ function renderHeatmap() {
   const thead = `
     <thead>
       <tr>
-        <th>Income ↓ / ST →</th>
+        <th>Income (k USD) ↓ / ST →</th>
         ${STCG_POINTS.map((p) => `<th>${p}%</th>`).join("")}
       </tr>
     </thead>
@@ -156,7 +160,7 @@ function renderHeatmap() {
           return `<td class="heat-cell${active ? " active" : ""}" data-income="${income}" data-stpct="${stPct}" style="background:${colorForRate(scenario.effectiveRate, min, max)}">${Math.round(scenario.effectiveRate)}%</td>`;
         }).join("");
 
-        return `<tr><td class="row-label">${currency.format(income)}</td>${row}</tr>`;
+        return `<tr><td class="row-label">${formatIncomeThousands(income)}</td>${row}</tr>`;
       }).join("")}
     </tbody>
   `;
@@ -182,7 +186,7 @@ function renderTaxDueTable() {
   const thead = `
     <thead>
       <tr>
-        <th>Income ↓ / ST →</th>
+        <th>Income (k USD) ↓ / ST →</th>
         ${STCG_POINTS.map((p) => `<th>${p}%</th>`).join("")}
       </tr>
     </thead>
@@ -200,7 +204,7 @@ function renderTaxDueTable() {
           return `<td class="tax-cell${active ? " active" : ""}">${formatNearestThousand(scenario.afterTax)}</td>`;
         }).join("");
 
-        return `<tr><td class="row-label">${currency.format(income)}</td>${row}</tr>`;
+        return `<tr><td class="row-label">${formatIncomeThousands(income)}</td>${row}</tr>`;
       }).join("")}
     </tbody>
   `;
