@@ -27,6 +27,7 @@ const currency = new Intl.NumberFormat("en-US", {
 });
 
 const heatmapTable = document.getElementById("heatmapTable");
+const taxDueTable = document.getElementById("taxDueTable");
 const detailBody = document.getElementById("detailBody");
 
 const state = {
@@ -165,9 +166,40 @@ function renderHeatmap() {
       state.stPct = stPct;
       state.heatmapSelection = { income, stPct };
       renderHeatmap();
+      renderTaxDueTable();
       renderDetail();
     });
   });
+}
+
+function renderTaxDueTable() {
+  const thead = `
+    <thead>
+      <tr>
+        <th>Income \\ ST%</th>
+        ${STCG_POINTS.map((p) => `<th>${p}%</th>`).join("")}
+      </tr>
+    </thead>
+  `;
+
+  const tbody = `
+    <tbody>
+      ${INCOME_BUCKETS.map((income) => {
+        const row = STCG_POINTS.map((stPct) => {
+          const scenario = calcScenario(income, stPct);
+          const active =
+            state.heatmapSelection &&
+            state.heatmapSelection.income === income &&
+            state.heatmapSelection.stPct === stPct;
+          return `<td class="tax-cell${active ? " active" : ""}">${currency.format(Math.round(scenario.totalTax))}</td>`;
+        }).join("");
+
+        return `<tr><td class="row-label">${currency.format(income)}</td>${row}</tr>`;
+      }).join("")}
+    </tbody>
+  `;
+
+  taxDueTable.innerHTML = thead + tbody;
 }
 
 function renderDetail() {
@@ -222,9 +254,11 @@ function renderDetail() {
       : null;
 
     renderHeatmap();
+    renderTaxDueTable();
     renderDetail();
   });
 }
 
 renderHeatmap();
+renderTaxDueTable();
 renderDetail();

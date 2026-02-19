@@ -119,6 +119,11 @@ th {
   text-align: center;
 }
 
+#taxDueTable th,
+#taxDueTable td {
+  text-align: center;
+}
+
 .row-label {
   text-align: left !important;
   font-weight: 700;
@@ -135,6 +140,10 @@ th {
 }
 
 .heat-cell.active {
+  box-shadow: inset 0 0 0 3px #1d1b18;
+}
+
+.tax-cell.active {
   box-shadow: inset 0 0 0 3px #1d1b18;
 }
 
