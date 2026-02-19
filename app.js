@@ -36,6 +36,10 @@ const state = {
   heatmapSelection: { income: 800000, stPct: 40 }
 };
 
+function formatNearestThousand(value) {
+  return currency.format(Math.round(value / 1000) * 1000);
+}
+
 function calcOrdinaryTax(taxableOrdinary) {
   let remaining = taxableOrdinary;
   let lower = 0;
@@ -193,7 +197,7 @@ function renderTaxDueTable() {
             state.heatmapSelection &&
             state.heatmapSelection.income === income &&
             state.heatmapSelection.stPct === stPct;
-          return `<td class="tax-cell${active ? " active" : ""}">${currency.format(Math.round(scenario.afterTax))}</td>`;
+          return `<td class="tax-cell${active ? " active" : ""}">${formatNearestThousand(scenario.afterTax)}</td>`;
         }).join("");
 
         return `<tr><td class="row-label">${currency.format(income)}</td>${row}</tr>`;
