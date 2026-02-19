@@ -137,7 +137,7 @@ function renderHeatmap() {
   const thead = `
     <thead>
       <tr>
-        <th>Income \\ ST%</th>
+        <th>Income ↓ / ST →</th>
         ${STCG_POINTS.map((p) => `<th>${p}%</th>`).join("")}
       </tr>
     </thead>
@@ -182,7 +182,7 @@ function renderTaxDueTable() {
   const thead = `
     <thead>
       <tr>
-        <th>Income \\ ST%</th>
+        <th>Income ↓ / ST →</th>
         ${STCG_POINTS.map((p) => `<th>${p}%</th>`).join("")}
       </tr>
     </thead>
