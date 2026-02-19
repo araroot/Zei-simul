@@ -119,6 +119,7 @@ function colorForRate(rate, min, max) {
 }
 
 function renderHeatmap() {
+  if (!heatmapTable) return;
   const values = [];
   for (const income of INCOME_BUCKETS) {
     for (const stPct of STCG_POINTS) {
@@ -173,6 +174,7 @@ function renderHeatmap() {
 }
 
 function renderTaxDueTable() {
+  if (!taxDueTable) return;
   const thead = `
     <thead>
       <tr>
@@ -203,6 +205,7 @@ function renderTaxDueTable() {
 }
 
 function renderDetail() {
+  if (!detailBody) return;
   const scenario = calcScenario(state.income, state.stPct);
 
   const rows = [
@@ -259,6 +262,21 @@ function renderDetail() {
   });
 }
 
-renderHeatmap();
-renderTaxDueTable();
-renderDetail();
+function boot() {
+  try {
+    renderHeatmap();
+    renderTaxDueTable();
+    renderDetail();
+  } catch (err) {
+    if (detailBody) {
+      detailBody.innerHTML = `<tr><td>Runtime error</td><td>${String(err)}</td></tr>`;
+    }
+    throw err;
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", boot);
+} else {
+  boot();
+}
