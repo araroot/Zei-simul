@@ -193,7 +193,7 @@ function renderTaxDueTable() {
             state.heatmapSelection &&
             state.heatmapSelection.income === income &&
             state.heatmapSelection.stPct === stPct;
-          return `<td class="tax-cell${active ? " active" : ""}">${currency.format(Math.round(scenario.totalTax))}</td>`;
+          return `<td class="tax-cell${active ? " active" : ""}">${currency.format(Math.round(scenario.afterTax))}</td>`;
         }).join("");
 
         return `<tr><td class="row-label">${currency.format(income)}</td>${row}</tr>`;
