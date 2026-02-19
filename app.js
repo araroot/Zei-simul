@@ -197,8 +197,7 @@ function renderHeatmap() {
       ${HEATMAP_INCOME_BUCKETS.map((income) => {
         const row = STCG_POINTS.map((stPct) => {
           const scenario = calcScenario(income, stPct);
-          const cls = `heat-cell${selectionClass(income, stPct)}`;
-          return `<td class="${cls}" data-income="${income}" data-stpct="${stPct}" style="background:${colorForRate(scenario.effectiveRate, min, max)}">${Math.round(scenario.effectiveRate)}%</td>`;
+          return `<td class="heat-cell" style="background:${colorForRate(scenario.effectiveRate, min, max)}">${Math.round(scenario.effectiveRate)}%</td>`;
         }).join("");
 
         return `<tr><td class="row-label">${formatIncomeThousands(income)}</td>${row}</tr>`;
