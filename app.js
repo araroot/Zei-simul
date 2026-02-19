@@ -17,7 +17,11 @@ const LTCG_THRESHOLDS = {
   fifteen: 613700
 };
 
-const INCOME_BUCKETS = [600000, 800000, 1000000, 1200000, 1400000];
+const HEATMAP_INCOME_BUCKETS = [600000, 800000, 1000000, 1200000, 1400000];
+const AFTER_TAX_INCOME_BUCKETS = [
+  500000, 600000, 700000, 800000, 900000, 1000000,
+  1100000, 1200000, 1300000, 1400000, 1500000
+];
 const STCG_POINTS = [0, 20, 40, 60, 80, 100];
 
 const currency = new Intl.NumberFormat("en-US", {
@@ -170,7 +174,7 @@ function selectionClass(income, stPct) {
 function renderHeatmap() {
   if (!heatmapTable) return;
   const values = [];
-  for (const income of INCOME_BUCKETS) {
+  for (const income of HEATMAP_INCOME_BUCKETS) {
     for (const stPct of STCG_POINTS) {
       values.push(calcScenario(income, stPct).effectiveRate);
     }
@@ -190,7 +194,7 @@ function renderHeatmap() {
 
   const tbody = `
     <tbody>
-      ${INCOME_BUCKETS.map((income) => {
+      ${HEATMAP_INCOME_BUCKETS.map((income) => {
         const row = STCG_POINTS.map((stPct) => {
           const scenario = calcScenario(income, stPct);
           const cls = `heat-cell${selectionClass(income, stPct)}`;
@@ -203,13 +207,6 @@ function renderHeatmap() {
   `;
 
   heatmapTable.innerHTML = thead + tbody;
-
-  heatmapTable.querySelectorAll(".heat-cell").forEach((cell) => {
-    cell.addEventListener("click", () => {
-      toggleSelection(Number(cell.dataset.income), Number(cell.dataset.stpct));
-      refreshAll();
-    });
-  });
 }
 
 function renderAfterTaxMatrix() {
@@ -225,7 +222,7 @@ function renderAfterTaxMatrix() {
 
   const tbody = `
     <tbody>
-      ${INCOME_BUCKETS.map((income) => {
+      ${AFTER_TAX_INCOME_BUCKETS.map((income) => {
         const row = STCG_POINTS.map((stPct) => {
           const scenario = calcScenario(income, stPct);
           const cls = `tax-cell${selectionClass(income, stPct)}`;
@@ -284,9 +281,11 @@ function renderScenarioDetails(slotIndex, targetBody, label) {
     const income = Number(document.getElementById(`detailIncome-${slotIndex}`).value);
     const stPct = Number(document.getElementById(`detailStPct-${slotIndex}`).value);
 
+    const boundedIncome = Math.max(1, income || sel.income);
+    const boundedStPct = Math.max(0, Math.min(100, stPct || 0));
     state.selections[slotIndex] = {
-      income: Math.max(1, income || sel.income),
-      stPct: Math.max(0, Math.min(100, stPct || 0))
+      income: boundedIncome,
+      stPct: boundedStPct
     };
 
     normalizeSelections();

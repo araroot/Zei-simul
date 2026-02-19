@@ -136,13 +136,11 @@ th {
 }
 
 .heat-cell {
-  cursor: pointer;
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  transition: box-shadow 120ms ease;
 }
 
 .heat-cell:hover {
-  transform: translateY(-1px);
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.3);
 }
 
 .heat-cell.active {
@@ -151,6 +149,10 @@ th {
 
 .tax-cell.active {
   box-shadow: inset 0 0 0 3px #1d1b18;
+}
+
+.tax-cell {
+  cursor: pointer;
 }
 
 .heat-cell.sel-1,
