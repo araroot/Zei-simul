@@ -1,0 +1,21 @@
+scenario_id,total_income,st_percentage,description
+1,131100,0,At 0% LTCG bracket boundary
+2,131100,50,"At 0% LTCG bracket, mixed"
+3,632250,0,At 15% LTCG bracket boundary
+4,632250,25,"At 15% LTCG bracket, mixed"
+5,632250,50,"At 15% LTCG bracket, 50/50"
+6,250000,0,"Exactly at NIIT threshold, all LT"
+7,250000,50,"At NIIT threshold, 50/50"
+8,260000,0,Just above NIIT threshold
+9,600000,0,600k all LT
+10,600000,50,600k 50/50
+11,600000,100,600k all ST
+12,768000,0,768k all LT (dispute case)
+13,768000,25,768k 25% ST
+14,1000000,0,1M all LT
+15,1000000,25,1M 25% ST
+16,1000000,50,1M 50% ST
+17,1000000,100,1M all ST
+18,1200000,0,1.2M all LT
+19,1400000,50,1.4M 50/50
+20,1500000,33,1.5M 33% ST

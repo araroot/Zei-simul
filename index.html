@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>2026 MFJ Capital Gains Heatmap</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/Users/raviaranke/Desktop/zei_simul/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div>
+          <div class="eyebrow">US Federal Income Tax · 2026 · MFJ</div>
+          <h1>Short-Term vs Long-Term Capital Gains Heatmap</h1>
+          <p class="subtitle">Click any heatmap cell, then edit inputs below to run scenario math instantly.</p>
+        </div>
+        <div class="chips">
+          <div class="chip">Standard Deduction: $32,200</div>
+          <div class="chip">NIIT: 3.8% over $250,000</div>
+          <div class="chip">LTCG Stacking Enabled</div>
+        </div>
+      </header>
+
+      <main class="stack">
+        <section class="card">
+          <h2>Effective Tax Rate Heatmap</h2>
+          <p class="hint">Rows are income levels. Columns are short-term capital gains percentage.</p>
+          <div class="table-wrap">
+            <table id="heatmapTable"></table>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Scenario Calculation (Editable)</h2>
+          <p class="hint">Edit income and STCG % below, then click Recalculate.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Calculation Item</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody id="detailBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/Users/raviaranke/Desktop/zei_simul/app.js"></script>
+  </body>
+</html>

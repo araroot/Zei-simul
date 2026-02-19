@@ -1,0 +1,56 @@
+Hi! I need you to calculate federal income taxes for 20 test scenarios.
+
+===============================================================================
+FILES FOR YOU
+===============================================================================
+
+📥 INPUT (scenarios to calculate):
+/Users/raviaranke/Desktop/zei_simul/shared/tax_scenarios_2026.csv
+
+📤 OUTPUT (your results - create this file):
+/Users/raviaranke/Desktop/zei_simul/shared/tax_results_other_agent.csv
+
+📋 INSTRUCTIONS (read this carefully):
+/Users/raviaranke/Desktop/zei_simul/shared/INSTRUCTIONS_FOR_OTHER_AGENT.md
+
+📝 QUICK REFERENCE (key parameters):
+/Users/raviaranke/Desktop/zei_simul/shared/QUICK_REFERENCE.txt
+
+===============================================================================
+WHAT YOU NEED TO DO
+===============================================================================
+
+1. Read the input CSV with 20 scenarios (income amounts + ST/LT split)
+
+2. For each scenario, calculate:
+   - Total federal tax
+   - Effective tax rate (%)
+   - After-tax income
+
+3. Use EXACTLY these parameters:
+   ✓ Tax year 2026
+   ✓ Married Filing Jointly
+   ✓ Standard deduction: $32,200
+   ✓ LTCG brackets: 0% up to $98,900, 15% to $613,700, 20% above
+   ✓ NIIT: 3.8% × min(NII, MAGI - $250,000)
+   ✓ LTCG stacking required (stack on top of ordinary income)
+
+4. Return your results in CSV format with these exact columns:
+   scenario_id,total_federal_tax,effective_rate_pct,after_tax_income
+
+===============================================================================
+CRITICAL TEST CASE (Scenario 12)
+===============================================================================
+
+Input:   $768,000 income, 0% short-term (100% long-term)
+Output:  Total tax = $121,324.00, Rate = 15.80%
+
+If you get this number, you're on track! ✓
+
+===============================================================================
+QUESTIONS?
+===============================================================================
+
+All details are in INSTRUCTIONS_FOR_OTHER_AGENT.md
+
+Let me know when you're done!

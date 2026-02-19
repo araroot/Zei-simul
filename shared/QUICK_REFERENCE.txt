@@ -1,0 +1,58 @@
+===============================================================================
+TAX CALCULATION TEST - QUICK REFERENCE FOR OTHER AGENT
+===============================================================================
+
+INPUT FILE:
+/Users/raviaranke/Desktop/zei_simul/shared/tax_scenarios_2026.csv
+
+OUTPUT FILE (create this):
+/Users/raviaranke/Desktop/zei_simul/shared/tax_results_other_agent.csv
+
+OUTPUT FORMAT:
+scenario_id,total_federal_tax,effective_rate_pct,after_tax_income
+
+===============================================================================
+EXACT PARAMETERS TO USE
+===============================================================================
+
+Tax Year:               2026
+Filing Status:          Married Filing Jointly (MFJ)
+Standard Deduction:     $32,200
+
+LTCG Brackets (2026):
+  0%:    $0 - $98,900
+  15%:   $98,900 - $613,700  ⚠️ NOTE: 2026 threshold, not 2025!
+  20%:   $613,700+
+
+Ordinary Brackets:      10%, 12%, 22%, 24%, 32%, 35%, 37% (standard 2026)
+
+NIIT:
+  Threshold:  $250,000 (MFJ)
+  Rate:       3.8%
+  Formula:    3.8% × min(Net Investment Income, MAGI - $250,000)
+
+STACKING RULE:
+  LTCG must be stacked on top of ordinary income (STCG) to determine rate!
+
+===============================================================================
+CRITICAL TEST CASE (Scenario 12): $768,000 all LTCG
+===============================================================================
+
+Expected Result:
+  Total Federal Tax:    $121,324.00
+  Effective Rate:       15.80%
+  After-Tax Income:     $646,676.00
+
+Breakdown:
+  Taxable LTCG:         $735,800
+  - @ 0%:   $98,900 × 0%  = $0
+  - @ 15%:  $514,800 × 15% = $77,220
+  - @ 20%:  $122,100 × 20% = $24,420
+  LTCG Tax:             $101,640
+  NIIT:                 $19,684
+  Total:                $121,324 ✓
+
+===============================================================================
+FULL INSTRUCTIONS:
+/Users/raviaranke/Desktop/zei_simul/shared/INSTRUCTIONS_FOR_OTHER_AGENT.md
+===============================================================================
