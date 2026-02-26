@@ -10,76 +10,127 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="./favicon.svg?v=20260209d"
-    />
-    <link rel="stylesheet" href="./styles.css?v=20260209b" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20260209d" />
+    <link rel="stylesheet" href="./styles.css?v=20260226a" />
   </head>
   <body>
     <div class="app">
       <header class="header">
         <div>
-          <div class="eyebrow">US Federal Income Tax · 2026 · MFJ</div>
-          <h1>Short-Term vs Long-Term Capital Gains Heatmap</h1>
-          <p class="subtitle">Use the after-tax matrix to select scenarios, then edit inputs below.</p>
+          <div class="eyebrow">US Federal Income Tax · MFJ</div>
+          <h1>Short-Term vs Long-Term Capital Gains</h1>
+          <p class="subtitle">Heatmap tab is unchanged. New tab extends modeling from Summary_2025 inputs.</p>
         </div>
         <div class="chips">
-          <div class="chip">Standard Deduction: $32,200</div>
-          <div class="chip">NIIT: 3.8% over $250,000</div>
+          <div class="chip">Standard Deduction</div>
+          <div class="chip">NIIT 3.8% over threshold</div>
           <div class="chip">LTCG Stacking Enabled</div>
         </div>
       </header>
 
-      <main class="stack">
-        <section class="card">
-          <h2>Effective Tax Rate Heatmap</h2>
-          <p class="hint">Rows are income levels. Columns are short-term capital gains percentage.</p>
-          <div class="table-wrap">
-            <table id="heatmapTable"></table>
+      <nav class="top-tabs">
+        <button class="top-tab active" data-panel="panel-heatmap">Heatmap</button>
+        <button class="top-tab" data-panel="panel-summary">2025 Summary Calculator</button>
+      </nav>
+
+      <main>
+        <section id="panel-heatmap" class="tab-panel active">
+          <div class="stack">
+            <section class="card">
+              <h2>Effective Tax Rate Heatmap</h2>
+              <p class="hint">Rows are income levels. Columns are short-term capital gains percentage.</p>
+              <div class="table-wrap">
+                <table id="heatmapTable"></table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>After-Tax Income (Matrix)</h2>
+              <p class="hint">Clickable matrix in k USD. Select up to 2 cells for side-by-side scenarios.</p>
+              <div class="table-wrap">
+                <table id="taxDueTable"></table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Selected Scenarios (Side-by-Side)</h2>
+              <p class="hint">Select up to 2 cells from matrix. Edit and recalculate each scenario below.</p>
+              <div class="compare-grid">
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Scenario A</th>
+                        <th>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody id="detailBodyA"></tbody>
+                  </table>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Scenario B</th>
+                        <th>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody id="detailBodyB"></tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
           </div>
         </section>
 
-        <section class="card">
-          <h2>After-Tax Income (Matrix)</h2>
-          <p class="hint">Clickable matrix in k USD. Select up to 2 cells for side-by-side scenarios.</p>
-          <div class="table-wrap">
-            <table id="taxDueTable"></table>
-          </div>
-        </section>
+        <section id="panel-summary" class="tab-panel">
+          <div class="stack">
+            <section class="card">
+              <h2>Summary_2025 Inputs</h2>
+              <p class="hint">Defaults pulled from workbook `Summary_2025` (USD totals). Edit as needed.</p>
+              <div class="summary-grid">
+                <label class="field-inline"><span>Net STCG (USD)</span><input id="sum-stcg" type="number" step="0.01" /></label>
+                <label class="field-inline"><span>Net LTCG (USD)</span><input id="sum-ltcg" type="number" step="0.01" /></label>
+                <label class="field-inline"><span>Dividends (USD)</span><input id="sum-dividends" type="number" step="0.01" /></label>
+                <label class="field-inline"><span>Interest (USD)</span><input id="sum-interest" type="number" step="0.01" /></label>
+                <label class="field-inline"><span>Other ordinary income (USD)</span><input id="sum-other" type="number" step="0.01" /></label>
+                <label class="field-inline"><span>Foreign-source income (USD)</span><input id="sum-foreign-income" type="number" step="0.01" /></label>
+                <label class="field-inline"><span>Foreign taxes paid (USD)</span><input id="sum-foreign-taxes" type="number" step="0.01" /></label>
+                <label class="field-inline"><span>FTC carryover (USD)</span><input id="sum-ftc-carry" type="number" step="0.01" /></label>
+                <label class="field-inline"><span>Standard deduction (USD)</span><input id="sum-std-ded" type="number" step="0.01" /></label>
+                <label class="field-inline"><span>NIIT threshold MFJ (USD)</span><input id="sum-niit-threshold" type="number" step="0.01" /></label>
+                <label class="field-inline"><span>Capital loss deduction cap (USD)</span><input id="sum-caploss-cap" type="number" step="0.01" /></label>
+              </div>
+              <div class="actions-row">
+                <button id="sum-recalc" class="btn">Recalculate US Federal Tax</button>
+              </div>
+            </section>
 
-        <section class="card">
-          <h2>Selected Scenarios (Side-by-Side)</h2>
-          <p class="hint">Select up to 2 cells from either matrix. Edit and recalculate each scenario below.</p>
-          <div class="compare-grid">
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Scenario A</th>
-                    <th>Value</th>
-                  </tr>
-                </thead>
-                <tbody id="detailBodyA"></tbody>
-              </table>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Scenario B</th>
-                    <th>Value</th>
-                  </tr>
-                </thead>
-                <tbody id="detailBodyB"></tbody>
-              </table>
-            </div>
+            <section class="card">
+              <h2>Assumptions Used</h2>
+              <ul class="assumptions" id="sum-assumptions"></ul>
+            </section>
+
+            <section class="card">
+              <h2>US Federal Tax Workup</h2>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Calculation Item</th>
+                      <th>Value</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sum-output"></tbody>
+                </table>
+              </div>
+            </section>
           </div>
         </section>
       </main>
     </div>
 
-    <script src="./app.js?v=20260209b"></script>
+    <script src="./app.js?v=20260226a"></script>
   </body>
 </html>
