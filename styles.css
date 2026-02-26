@@ -234,6 +234,22 @@ th {
   color: var(--muted);
 }
 
+.summary-table tbody tr:nth-child(odd) {
+  background: #fbf8f2;
+}
+
+.summary-table tbody tr:nth-child(even) {
+  background: #ffffff;
+}
+
+.summary-table tbody tr:hover {
+  background: #f3ecdf;
+}
+
+.summary-table td:first-child {
+  font-weight: 600;
+}
+
 .btn {
   border: none;
   border-radius: 8px;

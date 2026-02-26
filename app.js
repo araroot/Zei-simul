@@ -419,8 +419,11 @@ function calculateSummaryTax(inputs) {
   const foreignIncomeDerived = foreignStcg + foreignLtcg + foreignDividends + foreignInterest + foreignOther;
   const foreignIncomeForLimit = Math.max(0, foreignIncomeDerived);
   const worldwideIncomeForLimit = Math.max(0, totalIncome);
+  const foreignIncomeRatio = worldwideIncomeForLimit > 0
+    ? foreignIncomeForLimit / worldwideIncomeForLimit
+    : 0;
   const foreignTaxableIncomeApprox = worldwideIncomeForLimit > 0
-    ? (taxableIncome * foreignIncomeForLimit) / worldwideIncomeForLimit
+    ? taxableIncome * foreignIncomeRatio
     : 0;
 
   const ftcLimit = taxableIncome > 0
@@ -434,6 +437,7 @@ function calculateSummaryTax(inputs) {
 
   return {
     capNet,
+    stdDeduction: inputs.stdDeduction,
     qualifiedDividends,
     ordinaryDividends,
     ordinaryOther,
@@ -457,6 +461,8 @@ function calculateSummaryTax(inputs) {
     foreignInterest,
     foreignOther,
     foreignIncomeDerived,
+    worldwideIncomeForLimit,
+    foreignIncomeRatio,
     foreignTaxableIncomeApprox,
     ftcLimit,
     ftcAvailable,
@@ -523,8 +529,10 @@ function renderSummaryOutput(result) {
     ["Ordinary income before deduction", toMoney(result.ordinaryIncomeBeforeDed), "Other ordinary + ordinary cap gain - cap loss deduction"],
     ["Preferential income before deduction", toMoney(result.prefIncomeBeforeDed), "Net LTCG + qualified dividends"],
     ["AGI", toMoney(result.agi), "Simplified AGI"],
+    ["Standard deduction applied", toMoney(result.stdDeduction), "Applied to ordinary income first in this model"],
     ["Taxable ordinary income", toMoney(result.taxableOrdinary), "Ordinary base for bracket tax"],
-    ["Taxable LTCG", toMoney(result.taxablePref), "Preferential base after stacking"],
+    ["Taxable total income", toMoney(result.taxableIncome), "AGI - standard deduction"],
+    ["Taxable LTCG/qualified", toMoney(result.taxablePref), "Preferential base after stacking"],
     ["Ordinary tax", toMoney(result.ordinaryTax), "2025 MFJ ordinary brackets"],
     ["LTCG taxed at 0%", toMoney(result.ltcgBreakdown.atZero), "Stacking with ordinary income"],
     ["LTCG taxed at 15%", toMoney(result.ltcgBreakdown.atFifteen), "Stacking with ordinary income"],
@@ -540,7 +548,9 @@ function renderSummaryOutput(result) {
     ["Derived foreign dividends", toMoney(result.foreignDividends), "Total dividends - US dividends"],
     ["Derived foreign interest", toMoney(result.foreignInterest), "Total interest - US interest"],
     ["Derived foreign other", toMoney(result.foreignOther), "Total other - US other"],
-    ["Derived foreign gross income", toMoney(result.foreignIncomeDerived), "Sum of derived foreign categories"],
+    ["Derived foreign gross income", toMoney(result.foreignIncomeDerived), "FTC numerator (gross basis)"],
+    ["Worldwide gross income", toMoney(result.worldwideIncomeForLimit), "FTC denominator (gross basis)"],
+    ["Foreign / worldwide ratio", toPercent(result.foreignIncomeRatio * 100), "Used for taxable-income allocation"],
     ["Approx foreign taxable income", toMoney(result.foreignTaxableIncomeApprox), "Taxable income × foreign gross / worldwide gross"],
     ["FTC limit", toMoney(result.ftcLimit), "Regular tax × (foreign taxable / worldwide taxable)"],
     ["FTC available (paid + carryover)", toMoney(result.ftcAvailable), "Input-driven"],
