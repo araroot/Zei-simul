@@ -11,7 +11,7 @@
       rel="stylesheet"
     />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20260209d" />
-    <link rel="stylesheet" href="./styles.css?v=20260226e" />
+    <link rel="stylesheet" href="./styles.css?v=20260226f" />
   </head>
   <body>
     <div class="app">
@@ -88,6 +88,13 @@
             <section class="card">
               <h2>Summary_2025 Inputs</h2>
               <p class="hint">Defaults pulled from workbook `Summary_2025` (USD totals). Edit as needed.</p>
+              <div class="scenario-tabs" id="summary-scenario-tabs">
+                <button class="scenario-tab" data-scenario="A">Scenario A</button>
+                <button class="scenario-tab active" data-scenario="B">Scenario B</button>
+                <button class="scenario-tab" data-scenario="C">Scenario C</button>
+                <button class="scenario-tab" data-scenario="D">Scenario D</button>
+                <button class="scenario-tab" data-scenario="E">Scenario E</button>
+              </div>
               <div class="summary-grid">
                 <label class="field-inline"><span>Net STCG (USD)</span><input id="sum-stcg" type="number" step="1" /></label>
                 <label class="field-inline"><span>Net LTCG (USD)</span><input id="sum-ltcg" type="number" step="1" /></label>
@@ -136,6 +143,6 @@
       </main>
     </div>
 
-    <script src="./app.js?v=20260226e"></script>
+    <script src="./app.js?v=20260226f"></script>
   </body>
 </html>

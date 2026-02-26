@@ -38,6 +38,26 @@ const AFTER_TAX_INCOME_BUCKETS = [
   1100000, 1200000, 1300000, 1400000, 1500000
 ];
 const STCG_POINTS = [0, 20, 40, 60, 80, 100];
+const SUMMARY_SCENARIO_IDS = ["A", "B", "C", "D", "E"];
+
+const SUMMARY_BASE_SCENARIO_B = {
+  stcg: -290072,
+  ltcg: 1031155,
+  dividends: 22166,
+  qualifiedDividends: 2479,
+  interest: 22849,
+  other: 101597,
+  usStcg: 0,
+  usLtcg: 201184,
+  usDividends: 2479,
+  usInterest: 16925,
+  usOther: 2982,
+  foreignTaxes: 143430,
+  ftcCarryover: 0,
+  stdDeduction: 31500,
+  niitThreshold: 250000,
+  capLossCap: 3000
+};
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -75,12 +95,17 @@ const sumInputs = {
 const sumRecalcBtn = document.getElementById("sum-recalc");
 const sumAssumptions = document.getElementById("sum-assumptions");
 const sumOutput = document.getElementById("sum-output");
+const summaryScenarioTabs = Array.from(document.querySelectorAll("#summary-scenario-tabs .scenario-tab"));
 
 const state = {
   selections: [
     { income: 800000, stPct: 40 },
     { income: 1200000, stPct: 60 }
-  ]
+  ],
+  summary: {
+    activeScenario: "B",
+    scenarios: {}
+  }
 };
 
 function formatNearestThousand(value) {
@@ -102,6 +127,113 @@ function toPercent(value) {
 function parseNumber(input, fallback = 0) {
   const n = Number(input?.value ?? fallback);
   return Number.isFinite(n) ? n : fallback;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function cloneScenario(values) {
+  return {
+    ...values,
+    qualifiedDividends: values.qualifiedDividends === null ? null : Number(values.qualifiedDividends),
+    ftcCarryover: Number(values.ftcCarryover)
+  };
+}
+
+function seededRng(seedText) {
+  let seed = 0;
+  for (const ch of seedText) {
+    seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+  }
+  return () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+}
+
+function randomInt(rand, min, max) {
+  const low = Math.ceil(min);
+  const high = Math.floor(max);
+  return Math.floor(rand() * (high - low + 1)) + low;
+}
+
+function randomSignedLargeDelta(rand) {
+  const magnitude = randomInt(rand, 50000, 500000);
+  return rand() < 0.5 ? -magnitude : magnitude;
+}
+
+function randomShare(rand, min, max) {
+  return min + (max - min) * rand();
+}
+
+function sanitizeSummaryScenario(s) {
+  const scenario = cloneScenario(s);
+
+  scenario.ltcg = Math.max(0, scenario.ltcg);
+  scenario.dividends = Math.max(0, scenario.dividends);
+  scenario.interest = Math.max(0, scenario.interest);
+  scenario.other = Math.max(0, scenario.other);
+  scenario.foreignTaxes = Math.max(0, scenario.foreignTaxes);
+  scenario.ftcCarryover = Math.max(0, scenario.ftcCarryover);
+  scenario.stdDeduction = Math.max(0, scenario.stdDeduction);
+  scenario.niitThreshold = Math.max(0, scenario.niitThreshold);
+  scenario.capLossCap = Math.max(0, scenario.capLossCap);
+
+  // US-source components cannot exceed totals in each category.
+  scenario.usStcg = scenario.stcg > 0 ? clamp(Math.max(0, scenario.usStcg), 0, scenario.stcg) : 0;
+  scenario.usLtcg = clamp(Math.max(0, scenario.usLtcg), 0, scenario.ltcg);
+  scenario.usDividends = clamp(Math.max(0, scenario.usDividends), 0, scenario.dividends);
+  scenario.usInterest = clamp(Math.max(0, scenario.usInterest), 0, scenario.interest);
+  scenario.usOther = clamp(Math.max(0, scenario.usOther), 0, scenario.other);
+
+  if (scenario.qualifiedDividends !== null) {
+    scenario.qualifiedDividends = clamp(Math.max(0, scenario.qualifiedDividends), 0, scenario.dividends);
+  }
+
+  return scenario;
+}
+
+function buildSimulatedSummaryScenarios() {
+  const scenarios = {
+    B: sanitizeSummaryScenario(cloneScenario(SUMMARY_BASE_SCENARIO_B))
+  };
+
+  for (const id of SUMMARY_SCENARIO_IDS) {
+    if (id === "B") continue;
+
+    const rand = seededRng(`summary-${id}`);
+    const base = cloneScenario(SUMMARY_BASE_SCENARIO_B);
+    const scenario = {
+      ...base,
+      stcg: base.stcg + randomSignedLargeDelta(rand),
+      ltcg: base.ltcg + randomSignedLargeDelta(rand),
+      dividends: base.dividends + randomSignedLargeDelta(rand),
+      interest: base.interest + randomSignedLargeDelta(rand),
+      other: base.other + randomSignedLargeDelta(rand),
+      foreignTaxes: base.foreignTaxes + randomSignedLargeDelta(rand),
+      ftcCarryover: Math.max(0, base.ftcCarryover + randomSignedLargeDelta(rand))
+    };
+
+    scenario.ltcg = Math.max(0, scenario.ltcg);
+    scenario.dividends = Math.max(0, scenario.dividends);
+    scenario.interest = Math.max(0, scenario.interest);
+    scenario.other = Math.max(0, scenario.other);
+
+    scenario.usStcg = scenario.stcg > 0
+      ? Math.round(scenario.stcg * randomShare(rand, 0.08, 0.45))
+      : 0;
+    scenario.usLtcg = Math.round(scenario.ltcg * randomShare(rand, 0.08, 0.45));
+    scenario.usDividends = Math.round(scenario.dividends * randomShare(rand, 0.1, 0.6));
+    scenario.usInterest = Math.round(scenario.interest * randomShare(rand, 0.08, 0.75));
+    scenario.usOther = Math.round(scenario.other * randomShare(rand, 0.05, 0.35));
+
+    // Keep this blank so default rule applies (qualified = US-source dividends).
+    scenario.qualifiedDividends = null;
+    scenarios[id] = sanitizeSummaryScenario(scenario);
+  }
+
+  return scenarios;
 }
 
 function keyFor(income, stPct) {
@@ -481,7 +613,7 @@ function readSummaryInputs() {
     ? usDividends
     : parseNumber(sumInputs.qualifiedDividends);
 
-  return {
+  return sanitizeSummaryScenario({
     stcg: parseNumber(sumInputs.stcg),
     ltcg: parseNumber(sumInputs.ltcg),
     dividends: totalDividends,
@@ -498,7 +630,48 @@ function readSummaryInputs() {
     stdDeduction: parseNumber(sumInputs.stdDed, 31500),
     niitThreshold: parseNumber(sumInputs.niitThreshold, 250000),
     capLossCap: parseNumber(sumInputs.capLossCap, 3000)
+  });
+}
+
+function readSummaryDraftFromForm() {
+  const qualifiedRaw = (sumInputs.qualifiedDividends?.value ?? "").trim();
+  return {
+    stcg: parseNumber(sumInputs.stcg),
+    ltcg: parseNumber(sumInputs.ltcg),
+    dividends: parseNumber(sumInputs.dividends),
+    qualifiedDividends: qualifiedRaw === "" ? null : parseNumber(sumInputs.qualifiedDividends),
+    interest: parseNumber(sumInputs.interest),
+    other: parseNumber(sumInputs.other),
+    usStcg: parseNumber(sumInputs.usStcg),
+    usLtcg: parseNumber(sumInputs.usLtcg),
+    usDividends: parseNumber(sumInputs.usDividends),
+    usInterest: parseNumber(sumInputs.usInterest),
+    usOther: parseNumber(sumInputs.usOther),
+    foreignTaxes: parseNumber(sumInputs.foreignTaxes),
+    ftcCarryover: parseNumber(sumInputs.ftcCarry),
+    stdDeduction: parseNumber(sumInputs.stdDed, 31500),
+    niitThreshold: parseNumber(sumInputs.niitThreshold, 250000),
+    capLossCap: parseNumber(sumInputs.capLossCap, 3000)
   };
+}
+
+function writeSummaryScenarioToForm(values) {
+  sumInputs.stcg.value = String(Math.round(values.stcg));
+  sumInputs.ltcg.value = String(Math.round(values.ltcg));
+  sumInputs.dividends.value = String(Math.round(values.dividends));
+  sumInputs.qualifiedDividends.value = values.qualifiedDividends === null ? "" : String(Math.round(values.qualifiedDividends));
+  sumInputs.interest.value = String(Math.round(values.interest));
+  sumInputs.other.value = String(Math.round(values.other));
+  sumInputs.usStcg.value = String(Math.round(values.usStcg));
+  sumInputs.usLtcg.value = String(Math.round(values.usLtcg));
+  sumInputs.usDividends.value = String(Math.round(values.usDividends));
+  sumInputs.usInterest.value = String(Math.round(values.usInterest));
+  sumInputs.usOther.value = String(Math.round(values.usOther));
+  sumInputs.foreignTaxes.value = String(Math.round(values.foreignTaxes));
+  sumInputs.ftcCarry.value = String(Math.round(values.ftcCarryover));
+  sumInputs.stdDed.value = String(Math.round(values.stdDeduction));
+  sumInputs.niitThreshold.value = String(Math.round(values.niitThreshold));
+  sumInputs.capLossCap.value = String(Math.round(values.capLossCap));
 }
 
 function renderSummaryAssumptions() {
@@ -569,29 +742,59 @@ function recalcSummary() {
   renderSummaryOutput(result);
 }
 
+function saveActiveSummaryScenario() {
+  const activeId = state.summary.activeScenario;
+  if (!activeId) return;
+  state.summary.scenarios[activeId] = sanitizeSummaryScenario(readSummaryDraftFromForm());
+}
+
+function setActiveSummaryTabButton(id) {
+  summaryScenarioTabs.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.scenario === id);
+  });
+}
+
+function loadSummaryScenario(id) {
+  const scenario = state.summary.scenarios[id];
+  if (!scenario) return;
+  state.summary.activeScenario = id;
+  setActiveSummaryTabButton(id);
+  writeSummaryScenarioToForm(scenario);
+  recalcSummary();
+}
+
+function switchSummaryScenario(id) {
+  if (!state.summary.scenarios[id]) return;
+  saveActiveSummaryScenario();
+  loadSummaryScenario(id);
+}
+
 function seedSummaryDefaults() {
   if (!sumInputs.stcg) return;
-  sumInputs.stcg.value = "-290072";
-  sumInputs.ltcg.value = "1031155";
-  sumInputs.dividends.value = "22166";
-  sumInputs.qualifiedDividends.value = "2479";
-  sumInputs.interest.value = "22849";
-  sumInputs.other.value = "101597";
-  sumInputs.usStcg.value = "0";
-  sumInputs.usLtcg.value = "201184";
-  sumInputs.usDividends.value = "2479";
-  sumInputs.usInterest.value = "16925";
-  sumInputs.usOther.value = "2982";
-  sumInputs.foreignTaxes.value = "143430";
-  sumInputs.ftcCarry.value = "0";
-  sumInputs.stdDed.value = "31500";
-  sumInputs.niitThreshold.value = "250000";
-  sumInputs.capLossCap.value = "3000";
+  state.summary.scenarios = buildSimulatedSummaryScenarios();
+  loadSummaryScenario("B");
 }
 
 function bindSummaryEvents() {
   if (!sumRecalcBtn) return;
-  sumRecalcBtn.addEventListener("click", recalcSummary);
+
+  sumRecalcBtn.addEventListener("click", () => {
+    saveActiveSummaryScenario();
+    recalcSummary();
+  });
+
+  summaryScenarioTabs.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      switchSummaryScenario(btn.dataset.scenario);
+    });
+  });
+
+  Object.values(sumInputs).forEach((input) => {
+    if (!input) return;
+    input.addEventListener("input", () => {
+      saveActiveSummaryScenario();
+    });
+  });
 }
 
 function bindTopTabs() {

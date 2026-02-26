@@ -209,6 +209,29 @@ th {
   gap: 10px;
 }
 
+.scenario-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 12px;
+}
+
+.scenario-tab {
+  border: 1px solid var(--line);
+  background: #f8f4ec;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.scenario-tab.active {
+  background: #2f6b5f;
+  color: #fff;
+  border-color: #2f6b5f;
+}
+
 .field-inline {
   display: grid;
   gap: 6px;
