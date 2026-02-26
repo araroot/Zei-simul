@@ -57,9 +57,14 @@ const sumInputs = {
   stcg: document.getElementById("sum-stcg"),
   ltcg: document.getElementById("sum-ltcg"),
   dividends: document.getElementById("sum-dividends"),
+  qualifiedDividends: document.getElementById("sum-qualified-dividends"),
   interest: document.getElementById("sum-interest"),
   other: document.getElementById("sum-other"),
-  foreignIncome: document.getElementById("sum-foreign-income"),
+  usStcg: document.getElementById("sum-us-stcg"),
+  usLtcg: document.getElementById("sum-us-ltcg"),
+  usDividends: document.getElementById("sum-us-dividends"),
+  usInterest: document.getElementById("sum-us-interest"),
+  usOther: document.getElementById("sum-us-other"),
   foreignTaxes: document.getElementById("sum-foreign-taxes"),
   ftcCarry: document.getElementById("sum-ftc-carry"),
   stdDed: document.getElementById("sum-std-ded"),
@@ -382,11 +387,15 @@ function netCapital(stcg, ltcg, capLossCap) {
 }
 
 function calculateSummaryTax(inputs) {
+  const qualifiedDividends = Math.max(0, Math.min(inputs.qualifiedDividends, inputs.dividends));
+  const ordinaryDividends = inputs.dividends - qualifiedDividends;
+
   const capNet = netCapital(inputs.stcg, inputs.ltcg, inputs.capLossCap);
 
-  const ordinaryOther = inputs.dividends + inputs.interest + inputs.other;
+  const ordinaryOther = ordinaryDividends + inputs.interest + inputs.other;
   const ordinaryIncomeBeforeDed = ordinaryOther + capNet.ordinaryCapGain - capNet.capLossDeduction;
-  const agi = ordinaryIncomeBeforeDed + capNet.prefCapGain;
+  const prefIncomeBeforeDed = capNet.prefCapGain + qualifiedDividends;
+  const agi = ordinaryIncomeBeforeDed + prefIncomeBeforeDed;
   const totalIncome = inputs.stcg + inputs.ltcg + inputs.dividends + inputs.interest + inputs.other;
 
   const taxableIncome = Math.max(0, agi - inputs.stdDeduction);
@@ -402,8 +411,20 @@ function calculateSummaryTax(inputs) {
   const niitBase = Math.min(nii, magiExcess);
   const niit = niitBase * NIIT_RATE;
 
+  const foreignStcg = inputs.stcg - inputs.usStcg;
+  const foreignLtcg = inputs.ltcg - inputs.usLtcg;
+  const foreignDividends = inputs.dividends - inputs.usDividends;
+  const foreignInterest = inputs.interest - inputs.usInterest;
+  const foreignOther = inputs.other - inputs.usOther;
+  const foreignIncomeDerived = foreignStcg + foreignLtcg + foreignDividends + foreignInterest + foreignOther;
+  const foreignIncomeForLimit = Math.max(0, foreignIncomeDerived);
+  const worldwideIncomeForLimit = Math.max(0, totalIncome);
+  const foreignTaxableIncomeApprox = worldwideIncomeForLimit > 0
+    ? (taxableIncome * foreignIncomeForLimit) / worldwideIncomeForLimit
+    : 0;
+
   const ftcLimit = taxableIncome > 0
-    ? (regularTax * Math.min(inputs.foreignIncome, taxableIncome)) / taxableIncome
+    ? (regularTax * Math.min(foreignTaxableIncomeApprox, taxableIncome)) / taxableIncome
     : 0;
   const ftcAvailable = Math.max(0, inputs.foreignTaxes + inputs.ftcCarryover);
   const ftcAllowed = Math.min(Math.max(0, ftcLimit), ftcAvailable, regularTax);
@@ -413,8 +434,11 @@ function calculateSummaryTax(inputs) {
 
   return {
     capNet,
+    qualifiedDividends,
+    ordinaryDividends,
     ordinaryOther,
     ordinaryIncomeBeforeDed,
+    prefIncomeBeforeDed,
     agi,
     totalIncome,
     taxableIncome,
@@ -427,6 +451,13 @@ function calculateSummaryTax(inputs) {
     magiExcess,
     niitBase,
     niit,
+    foreignStcg,
+    foreignLtcg,
+    foreignDividends,
+    foreignInterest,
+    foreignOther,
+    foreignIncomeDerived,
+    foreignTaxableIncomeApprox,
     ftcLimit,
     ftcAvailable,
     ftcAllowed,
@@ -441,9 +472,14 @@ function readSummaryInputs() {
     stcg: parseNumber(sumInputs.stcg),
     ltcg: parseNumber(sumInputs.ltcg),
     dividends: parseNumber(sumInputs.dividends),
+    qualifiedDividends: parseNumber(sumInputs.qualifiedDividends),
     interest: parseNumber(sumInputs.interest),
     other: parseNumber(sumInputs.other),
-    foreignIncome: parseNumber(sumInputs.foreignIncome),
+    usStcg: parseNumber(sumInputs.usStcg),
+    usLtcg: parseNumber(sumInputs.usLtcg),
+    usDividends: parseNumber(sumInputs.usDividends),
+    usInterest: parseNumber(sumInputs.usInterest),
+    usOther: parseNumber(sumInputs.usOther),
     foreignTaxes: parseNumber(sumInputs.foreignTaxes),
     ftcCarryover: parseNumber(sumInputs.ftcCarry),
     stdDeduction: parseNumber(sumInputs.stdDed, 31500),
@@ -456,11 +492,13 @@ function renderSummaryAssumptions() {
   if (!sumAssumptions) return;
   const assumptions = [
     "Tax year is treated as 2025 MFJ for this tab (2025 brackets and LTCG thresholds).",
-    "All dividends are treated as ordinary (not qualified) unless you adjust inputs externally.",
+    "Qualified dividends are modeled separately; enter the qualified portion explicitly.",
     "AMT, itemized deductions, QBI, payroll taxes, and phaseouts are not modeled.",
     "FTC is applied only against regular tax (not NIIT) using the standard limitation ratio.",
-    "Foreign-source income input is assumed to represent taxable foreign-source income for FTC limit.",
-    "NIIT uses MAGI ≈ AGI assumption in this simplified model."
+    "Foreign-source income is derived from total minus US-source components by category.",
+    "Foreign taxable income for FTC limit is approximated by proportional allocation: taxable income × (foreign gross / worldwide gross).",
+    "NIIT uses MAGI ≈ AGI assumption in this simplified model.",
+    "Investment income for NIIT is approximated as net capital gains + dividends + interest."
   ];
   sumAssumptions.innerHTML = assumptions.map((a) => `<li>${a}</li>`).join("");
 }
@@ -471,9 +509,12 @@ function renderSummaryOutput(result) {
     ["Total input income", toMoney(result.totalIncome), "STCG + LTCG + dividends + interest + other"],
     ["Net ordinary capital gain", toMoney(result.capNet.ordinaryCapGain), "After ST/LT netting"],
     ["Net preferential capital gain", toMoney(result.capNet.prefCapGain), "After ST/LT netting"],
+    ["Qualified dividends input", toMoney(result.qualifiedDividends), "Included in preferential-income stack"],
+    ["Ordinary dividends", toMoney(result.ordinaryDividends), "Total dividends - qualified dividends"],
     ["Capital loss deduction used", toMoney(result.capNet.capLossDeduction), "Capped by input limit"],
     ["Capital loss carryover", toMoney(result.capNet.capLossCarryover), "Carryforward estimate"],
     ["Ordinary income before deduction", toMoney(result.ordinaryIncomeBeforeDed), "Other ordinary + ordinary cap gain - cap loss deduction"],
+    ["Preferential income before deduction", toMoney(result.prefIncomeBeforeDed), "Net LTCG + qualified dividends"],
     ["AGI", toMoney(result.agi), "Simplified AGI"],
     ["Taxable ordinary income", toMoney(result.taxableOrdinary), "Ordinary base for bracket tax"],
     ["Taxable LTCG", toMoney(result.taxablePref), "Preferential base after stacking"],
@@ -487,7 +528,14 @@ function renderSummaryOutput(result) {
     ["MAGI excess over NIIT threshold", toMoney(result.magiExcess), "AGI - threshold"],
     ["NIIT base", toMoney(result.niitBase), "min(NII, MAGI excess)"],
     ["NIIT (3.8%)", toMoney(result.niit), "Not reduced by FTC"],
-    ["FTC limit", toMoney(result.ftcLimit), "Regular tax × foreign taxable / worldwide taxable"],
+    ["Derived foreign STCG", toMoney(result.foreignStcg), "Total STCG - US STCG"],
+    ["Derived foreign LTCG", toMoney(result.foreignLtcg), "Total LTCG - US LTCG"],
+    ["Derived foreign dividends", toMoney(result.foreignDividends), "Total dividends - US dividends"],
+    ["Derived foreign interest", toMoney(result.foreignInterest), "Total interest - US interest"],
+    ["Derived foreign other", toMoney(result.foreignOther), "Total other - US other"],
+    ["Derived foreign gross income", toMoney(result.foreignIncomeDerived), "Sum of derived foreign categories"],
+    ["Approx foreign taxable income", toMoney(result.foreignTaxableIncomeApprox), "Taxable income × foreign gross / worldwide gross"],
+    ["FTC limit", toMoney(result.ftcLimit), "Regular tax × (foreign taxable / worldwide taxable)"],
     ["FTC available (paid + carryover)", toMoney(result.ftcAvailable), "Input-driven"],
     ["FTC allowed", toMoney(result.ftcAllowed), "min(limit, available, regular tax)"],
     ["US federal income tax", toMoney(result.usFederalIncomeTax), "Regular tax - FTC allowed + NIIT"],
@@ -509,9 +557,14 @@ function seedSummaryDefaults() {
   sumInputs.stcg.value = "-290072.2324589123";
   sumInputs.ltcg.value = "1031155.3903597468";
   sumInputs.dividends.value = "22166.417550181908";
+  sumInputs.qualifiedDividends.value = "0";
   sumInputs.interest.value = "22848.82284507592";
   sumInputs.other.value = "101596.79429527275";
-  sumInputs.foreignIncome.value = "664125.612591365";
+  sumInputs.usStcg.value = "0";
+  sumInputs.usLtcg.value = "201183.65";
+  sumInputs.usDividends.value = "2478.8";
+  sumInputs.usInterest.value = "16925.12";
+  sumInputs.usOther.value = "2982.01";
   sumInputs.foreignTaxes.value = "143430.35015436172";
   sumInputs.ftcCarry.value = "0";
   sumInputs.stdDed.value = "31500";
