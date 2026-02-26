@@ -96,7 +96,7 @@ function toMoney(value) {
 }
 
 function toPercent(value) {
-  return `${value.toFixed(2)}%`;
+  return `${Math.round(value)}%`;
 }
 
 function parseNumber(input, fallback = 0) {
@@ -554,18 +554,18 @@ function recalcSummary() {
 
 function seedSummaryDefaults() {
   if (!sumInputs.stcg) return;
-  sumInputs.stcg.value = "-290072.2324589123";
-  sumInputs.ltcg.value = "1031155.3903597468";
-  sumInputs.dividends.value = "22166.417550181908";
+  sumInputs.stcg.value = "-290072";
+  sumInputs.ltcg.value = "1031155";
+  sumInputs.dividends.value = "22166";
   sumInputs.qualifiedDividends.value = "0";
-  sumInputs.interest.value = "22848.82284507592";
-  sumInputs.other.value = "101596.79429527275";
+  sumInputs.interest.value = "22849";
+  sumInputs.other.value = "101597";
   sumInputs.usStcg.value = "0";
-  sumInputs.usLtcg.value = "201183.65";
-  sumInputs.usDividends.value = "2478.8";
-  sumInputs.usInterest.value = "16925.12";
-  sumInputs.usOther.value = "2982.01";
-  sumInputs.foreignTaxes.value = "143430.35015436172";
+  sumInputs.usLtcg.value = "201184";
+  sumInputs.usDividends.value = "2479";
+  sumInputs.usInterest.value = "16925";
+  sumInputs.usOther.value = "2982";
+  sumInputs.foreignTaxes.value = "143430";
   sumInputs.ftcCarry.value = "0";
   sumInputs.stdDed.value = "31500";
   sumInputs.niitThreshold.value = "250000";
