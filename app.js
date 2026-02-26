@@ -468,16 +468,23 @@ function calculateSummaryTax(inputs) {
 }
 
 function readSummaryInputs() {
+  const totalDividends = parseNumber(sumInputs.dividends);
+  const usDividends = parseNumber(sumInputs.usDividends);
+  const qualifiedRaw = (sumInputs.qualifiedDividends?.value ?? "").trim();
+  const qualifiedDividends = qualifiedRaw === ""
+    ? usDividends
+    : parseNumber(sumInputs.qualifiedDividends);
+
   return {
     stcg: parseNumber(sumInputs.stcg),
     ltcg: parseNumber(sumInputs.ltcg),
-    dividends: parseNumber(sumInputs.dividends),
-    qualifiedDividends: parseNumber(sumInputs.qualifiedDividends),
+    dividends: totalDividends,
+    qualifiedDividends,
     interest: parseNumber(sumInputs.interest),
     other: parseNumber(sumInputs.other),
     usStcg: parseNumber(sumInputs.usStcg),
     usLtcg: parseNumber(sumInputs.usLtcg),
-    usDividends: parseNumber(sumInputs.usDividends),
+    usDividends,
     usInterest: parseNumber(sumInputs.usInterest),
     usOther: parseNumber(sumInputs.usOther),
     foreignTaxes: parseNumber(sumInputs.foreignTaxes),
@@ -492,7 +499,7 @@ function renderSummaryAssumptions() {
   if (!sumAssumptions) return;
   const assumptions = [
     "Tax year is treated as 2025 MFJ for this tab (2025 brackets and LTCG thresholds).",
-    "Qualified dividends are modeled separately; enter the qualified portion explicitly.",
+    "Qualified dividends default to US-source dividends when the input is left blank.",
     "AMT, itemized deductions, QBI, payroll taxes, and phaseouts are not modeled.",
     "FTC is applied only against regular tax (not NIIT) using the standard limitation ratio.",
     "Foreign-source income is derived from total minus US-source components by category.",
@@ -509,7 +516,7 @@ function renderSummaryOutput(result) {
     ["Total input income", toMoney(result.totalIncome), "STCG + LTCG + dividends + interest + other"],
     ["Net ordinary capital gain", toMoney(result.capNet.ordinaryCapGain), "After ST/LT netting"],
     ["Net preferential capital gain", toMoney(result.capNet.prefCapGain), "After ST/LT netting"],
-    ["Qualified dividends input", toMoney(result.qualifiedDividends), "Included in preferential-income stack"],
+    ["Qualified dividends used", toMoney(result.qualifiedDividends), "Defaults to US-source dividends when blank"],
     ["Ordinary dividends", toMoney(result.ordinaryDividends), "Total dividends - qualified dividends"],
     ["Capital loss deduction used", toMoney(result.capNet.capLossDeduction), "Capped by input limit"],
     ["Capital loss carryover", toMoney(result.capNet.capLossCarryover), "Carryforward estimate"],
@@ -557,7 +564,7 @@ function seedSummaryDefaults() {
   sumInputs.stcg.value = "-290072";
   sumInputs.ltcg.value = "1031155";
   sumInputs.dividends.value = "22166";
-  sumInputs.qualifiedDividends.value = "0";
+  sumInputs.qualifiedDividends.value = "2479";
   sumInputs.interest.value = "22849";
   sumInputs.other.value = "101597";
   sumInputs.usStcg.value = "0";
