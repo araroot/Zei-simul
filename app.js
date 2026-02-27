@@ -103,7 +103,7 @@ const state = {
     { income: 1200000, stPct: 60 }
   ],
   summary: {
-    activeScenario: "B",
+    activeScenario: "A",
     scenarios: {}
   }
 };
@@ -772,7 +772,7 @@ function switchSummaryScenario(id) {
 function seedSummaryDefaults() {
   if (!sumInputs.stcg) return;
   state.summary.scenarios = buildSimulatedSummaryScenarios();
-  loadSummaryScenario("B");
+  loadSummaryScenario("A");
 }
 
 function bindSummaryEvents() {
