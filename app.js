@@ -180,6 +180,74 @@ const FORM1116_LAYOUT = {
   }
 };
 
+const FORM1040_FIELDS = {
+  page2: {
+    line11: "topmostSubform[0].Page2[0].f2_02[0]",
+    line12: "topmostSubform[0].Page2[0].f2_03[0]",
+    line13a: "topmostSubform[0].Page2[0].f2_04[0]",
+    line13b: "topmostSubform[0].Page2[0].f2_05[0]",
+    line14: "topmostSubform[0].Page2[0].f2_06[0]",
+    line15: "topmostSubform[0].Page2[0].f2_07[0]",
+    line16: "topmostSubform[0].Page2[0].f2_08[0]",
+    line17: "topmostSubform[0].Page2[0].f2_09[0]",
+    line18: "topmostSubform[0].Page2[0].f2_10[0]",
+    line19: "topmostSubform[0].Page2[0].f2_11[0]",
+    line20: "topmostSubform[0].Page2[0].f2_12[0]",
+    line21: "topmostSubform[0].Page2[0].f2_13[0]",
+    line22: "topmostSubform[0].Page2[0].f2_14[0]",
+    line23: "topmostSubform[0].Page2[0].f2_15[0]",
+    line24: "topmostSubform[0].Page2[0].f2_16[0]",
+    line25d: "topmostSubform[0].Page2[0].f2_20[0]",
+    line31: "topmostSubform[0].Page2[0].f2_27[0]",
+    line32: "topmostSubform[0].Page2[0].f2_28[0]",
+    line33: "topmostSubform[0].Page2[0].f2_29[0]",
+    line34: "topmostSubform[0].Page2[0].f2_30[0]",
+    line35a: "topmostSubform[0].Page2[0].f2_31[0]",
+    line36: "topmostSubform[0].Page2[0].f2_34[0]",
+    line37: "topmostSubform[0].Page2[0].f2_35[0]",
+    line38: "topmostSubform[0].Page2[0].f2_36[0]"
+  }
+};
+
+const FORM6251_FIELDS = {
+  name: "topmostSubform[0].Page1[0].f1_1[0]",
+  ssn: "topmostSubform[0].Page1[0].f1_2[0]",
+  line1a: "topmostSubform[0].Page1[0].f1_3[0]",
+  line1b: "topmostSubform[0].Page1[0].f1_4[0]",
+  line2a: "topmostSubform[0].Page1[0].f1_5[0]",
+  line2g: "topmostSubform[0].Page1[0].f1_11[0]",
+  line3: "topmostSubform[0].Page1[0].f1_25[0]",
+  line4: "topmostSubform[0].Page1[0].f1_26[0]",
+  line5: "topmostSubform[0].Page1[0].f1_27[0]",
+  line6: "topmostSubform[0].Page1[0].f1_28[0]",
+  line7: "topmostSubform[0].Page1[0].f1_29[0]",
+  line8: "topmostSubform[0].Page1[0].f1_30[0]",
+  line9: "topmostSubform[0].Page1[0].f1_31[0]",
+  line10: "topmostSubform[0].Page1[0].f1_32[0]",
+  line11: "topmostSubform[0].Page1[0].f1_33[0]"
+};
+
+const FORM8960_FIELDS = {
+  name: "topmostSubform[0].Page1[0].f1_1[0]",
+  ssn: "topmostSubform[0].Page1[0].f1_2[0]",
+  line1: "topmostSubform[0].Page1[0].f1_3[0]",
+  line2: "topmostSubform[0].Page1[0].f1_4[0]",
+  line3: "topmostSubform[0].Page1[0].f1_5[0]",
+  line4c: "topmostSubform[0].Page1[0].f1_8[0]",
+  line5a: "topmostSubform[0].Page1[0].f1_9[0]",
+  line5d: "topmostSubform[0].Page1[0].f1_12[0]",
+  line8: "topmostSubform[0].Page1[0].f1_15[0]",
+  line9a: "topmostSubform[0].Page1[0].f1_16[0]",
+  line9d: "topmostSubform[0].Page1[0].f1_19[0]",
+  line11: "topmostSubform[0].Page1[0].f1_21[0]",
+  line12: "topmostSubform[0].Page1[0].f1_22[0]",
+  line13: "topmostSubform[0].Page1[0].f1_23[0]",
+  line14: "topmostSubform[0].Page1[0].f1_24[0]",
+  line15: "topmostSubform[0].Page1[0].f1_25[0]",
+  line16: "topmostSubform[0].Page1[0].f1_26[0]",
+  line17: "topmostSubform[0].Page1[0].f1_27[0]"
+};
+
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
@@ -305,6 +373,9 @@ const builderRecalcBtn = document.getElementById("builder-recalc");
 const builderRecalcBottomBtn = document.getElementById("builder-recalc-bottom");
 const builderResetBtn = document.getElementById("builder-reset");
 const builderResetBottomBtn = document.getElementById("builder-reset-bottom");
+const builderGeneratePdfBtn = document.getElementById("builder-generate-pdf");
+const builderGeneratePdfBottomBtn = document.getElementById("builder-generate-pdf-bottom");
+const builderPdfStatus = document.getElementById("builder-pdf-status");
 const builderBridgeOutput = document.getElementById("builder-bridge-output");
 const builder1040Output = document.getElementById("builder-1040-output");
 const builderAmtOutput = document.getElementById("builder-amt-output");
@@ -2326,6 +2397,7 @@ function recalcBuilder() {
   renderRows(builder1116GeneralOutput, getBuilder1116Rows(builder, result, "general"));
   renderBuilderAssumptions();
   updateBuilderMetrics(builder, result);
+  setBuilderPdfStatus("Ready to generate a combined packet with Form 1040, Form 6251, Form 8960, and both Form 1116 forms.");
 }
 
 function seedBuilderDefaults() {
@@ -2339,6 +2411,50 @@ function resetBuilder() {
   recalcBuilder();
 }
 
+function setBuilderPdfStatus(message) {
+  if (!builderPdfStatus) return;
+  builderPdfStatus.textContent = message;
+}
+
+async function generateBuilderCombinedPdf() {
+  if (!window.PDFLib?.PDFDocument) {
+    setBuilderPdfStatus("PDF library failed to load.");
+    return;
+  }
+
+  try {
+    const builder = readBuilderInputs();
+    state.builder.inputs = builder;
+    const preliminaryResult = calculateSummaryTax(builderToSummaryInputs(builder));
+    const passiveForm = computeBuilderForm1116(builder, preliminaryResult, "passive");
+    const generalForm = computeBuilderForm1116(builder, preliminaryResult, "general");
+    const result = applyBuilderFtcToResult(preliminaryResult, passiveForm, generalForm);
+
+    setBuilderPdfStatus("Generating combined packet: Form 1040, Form 6251, Form 8960, and both Form 1116 pages...");
+
+    const [form1040Pdf, form6251Pdf, form8960Pdf, passive1116Pdf, general1116Pdf] = await Promise.all([
+      build1040Pdf(result),
+      build6251Pdf(result),
+      build8960Pdf(result),
+      buildForm1116Pdf(buildBuilderForm1116PdfData(builder, result, "passive"), true),
+      buildForm1116Pdf(buildBuilderForm1116PdfData(builder, result, "general"), true)
+    ]);
+
+    const combinedPdf = await combinePdfDocuments([
+      form1040Pdf,
+      form6251Pdf,
+      form8960Pdf,
+      passive1116Pdf,
+      general1116Pdf
+    ]);
+
+    triggerPdfDownload(combinedPdf, "return-builder-tax-packet.pdf");
+    setBuilderPdfStatus("Combined packet generated: Form 1040, Form 6251, Form 8960, Form 1116 passive, and Form 1116 general.");
+  } catch (err) {
+    setBuilderPdfStatus(`Combined packet generation failed: ${err.message || String(err)}`);
+  }
+}
+
 function bindBuilderEvents() {
   if (!builderRecalcBtn) return;
   builderRecalcBtn.addEventListener("click", recalcBuilder);
@@ -2350,6 +2466,12 @@ function bindBuilderEvents() {
   }
   if (builderResetBottomBtn) {
     builderResetBottomBtn.addEventListener("click", resetBuilder);
+  }
+  if (builderGeneratePdfBtn) {
+    builderGeneratePdfBtn.addEventListener("click", generateBuilderCombinedPdf);
+  }
+  if (builderGeneratePdfBottomBtn) {
+    builderGeneratePdfBottomBtn.addEventListener("click", generateBuilderCombinedPdf);
   }
   Object.values(builderInputs).forEach((input) => {
     if (!input) return;
@@ -2502,22 +2624,34 @@ function drawPdfDecimal(page, rect, value, places = 4) {
   drawRectText(page, rect, formatPdfDecimal(value, places), { align: "right" });
 }
 
+function setPdfTextField(form, fieldName, value) {
+  if (value === null || value === undefined) return;
+  try {
+    form.getTextField(fieldName).setText(String(value));
+  } catch (err) {
+    // Leave missing or unsupported fields blank rather than failing the export.
+  }
+}
+
 function addSupportingStatementPage(pdfDoc, formData) {
   const page = pdfDoc.addPage([612, 792]);
+  const titlePrefix = formData.support?.titlePrefix || "Scenario B";
+  const line3aLabel = formData.support?.line3aLabel || "Line 3a allocation pool";
+  const mortgageInterestPool = formData.support?.mortgageInterestPool ?? 16500;
   const lines = [
-    `Form 1116 Supporting Statement - Scenario B - ${formData.categoryLabel}`,
+    `Form 1116 Supporting Statement - ${titlePrefix} - ${formData.categoryLabel}`,
     "",
     `Country: ${formData.country}`,
     `Method: ${formData.method}`,
     "",
-    "Line 3a detail:",
-    `Real estate taxes for home: ${formatPdfAmount(formData.line3a)}`,
+    `${line3aLabel}:`,
+    `${formatPdfAmount(formData.line3a)}`,
     "",
     "Line 4a worksheet:",
     `Gross foreign source income: ${formatPdfAmount(formData.line3d)}`,
     `Gross income from all sources: ${formatPdfAmount(formData.line3e)}`,
     `Ratio: ${formatPdfDecimal(formData.line3f, 4)}`,
-    `Deductible home mortgage interest: ${formatPdfAmount(16500)}`,
+    `Deductible home mortgage interest: ${formatPdfAmount(mortgageInterestPool)}`,
     `Line 4a apportioned amount: ${formatPdfAmount(formData.line4a)}`,
     ""
   ];
@@ -2532,7 +2666,7 @@ function addSupportingStatementPage(pdfDoc, formData) {
       "India tax refund was excluded from FTC income and foreign taxes."
     );
   } else {
-    lines.push("Scenario B has no general-category foreign-source income after moving EPF to passive and excluding the India tax refund.");
+    lines.push(formData.support?.generalStatement || "General-category income and taxes were taken directly from the builder inputs for this packet.");
   }
 
   let y = 748;
@@ -2649,6 +2783,192 @@ async function buildForm1116Pdf(formData, summaryMode) {
   addSupportingStatementPage(pdfDoc, formData);
   form.flatten();
   return pdfDoc.save();
+}
+
+function buildBuilderForm1116PdfData(builder, result, category) {
+  const data = computeBuilderForm1116(builder, result, category);
+  const isPassive = category === "passive";
+  const totalPassiveTaxes = builder.ftaxPassiveGains + builder.ftaxPassiveDividends + builder.ftaxPassiveInterest + builder.ftaxPassiveOther;
+  const line3aLabel = result.deductionType === "itemized"
+    ? "Line 3a allocation pool (SALT + other itemized deductions)"
+    : "Line 3a allocation pool (standard deduction)";
+
+  return {
+    name: "",
+    ssn: "",
+    category,
+    categoryLabel: isPassive ? "Passive category income" : "General category income",
+    country: "India",
+    method: "accrued",
+    line1aText: isPassive
+      ? "Adjusted foreign passive income"
+      : "Foreign earned or business income",
+    line1a: data.line1a,
+    line2: data.line2,
+    line3a: data.line3a,
+    line3b: data.line3b,
+    line3c: data.line3c,
+    line3d: data.line3d,
+    line3e: data.line3e,
+    line3f: data.line3f,
+    line3g: data.line3g,
+    line4a: data.line4a,
+    line4b: data.line4b,
+    line5: data.line5,
+    line6: data.line6,
+    line7: data.line7,
+    part2: {
+      country: "India",
+      date: "12/31/2025",
+      foreignDividends: isPassive ? builder.ftaxPassiveDividends : 0,
+      foreignRents: 0,
+      foreignInterest: isPassive ? builder.ftaxPassiveInterest : 0,
+      foreignOther: isPassive ? builder.ftaxPassiveGains + builder.ftaxPassiveOther : builder.ftaxGeneral,
+      usdDividends: isPassive ? builder.ftaxPassiveDividends : 0,
+      usdRents: 0,
+      usdInterest: isPassive ? builder.ftaxPassiveInterest : 0,
+      usdOther: isPassive ? builder.ftaxPassiveGains + builder.ftaxPassiveOther : builder.ftaxGeneral,
+      total: isPassive ? totalPassiveTaxes : builder.ftaxGeneral
+    },
+    line8: data.line8,
+    line9: data.line9,
+    line10: data.line10,
+    line11: data.line11,
+    line12: data.line12,
+    line13: data.line13,
+    line14: data.line14,
+    line15: data.line15,
+    line16: data.line16,
+    line17: data.line17,
+    line18: data.line18,
+    line19: data.line19,
+    line20: data.line20,
+    line21: data.line21,
+    line22: data.line22,
+    line23: data.line23,
+    line24: data.line24,
+    summary: {
+      line27: data.line24,
+      line28: 0,
+      line32: data.line24,
+      line33: data.line24,
+      line34: 0,
+      line35: data.line24
+    },
+    support: {
+      titlePrefix: "Return Builder",
+      line3aLabel,
+      mortgageInterestPool: builder.mortgageInterest,
+      adjustedForeignCapitalGain: data.support.adjustedForeignLongTerm + data.support.adjustedForeignQualifiedDividends,
+      adjustedForeignCapitalLoss: data.support.adjustedForeignCapitalLoss,
+      foreign15Gain: data.support.foreignLt15 + data.support.foreignQd15,
+      foreign20Gain: data.support.foreignLt20 + data.support.foreignQd20,
+      generalStatement: "General-category income, taxes, and deductions were taken directly from the Return Builder inputs."
+    }
+  };
+}
+
+async function build1040Pdf(result) {
+  const { PDFDocument } = window.PDFLib;
+  const existingPdfBytes = await fetch("./shared/irs_f1040_2025.pdf").then((res) => res.arrayBuffer());
+  const pdfDoc = await PDFDocument.load(existingPdfBytes);
+  const form = pdfDoc.getForm();
+
+  const p2 = FORM1040_FIELDS.page2;
+  setPdfTextField(form, p2.line11, formatPdfAmount(result.agi));
+  setPdfTextField(form, p2.line12, formatPdfAmount(result.deductionUsed));
+  setPdfTextField(form, p2.line13a, formatPdfAmount(0));
+  setPdfTextField(form, p2.line13b, formatPdfAmount(0));
+  setPdfTextField(form, p2.line14, formatPdfAmount(result.deductionUsed));
+  setPdfTextField(form, p2.line15, formatPdfAmount(result.taxableIncome));
+  setPdfTextField(form, p2.line16, formatPdfAmount(result.regularTax));
+  setPdfTextField(form, p2.line17, formatPdfAmount(result.amt));
+  setPdfTextField(form, p2.line18, formatPdfAmount(result.taxBeforeCredits));
+  setPdfTextField(form, p2.line19, formatPdfAmount(0));
+  setPdfTextField(form, p2.line20, formatPdfAmount(result.ftcAllowed + result.otherNonrefundableCreditsAllowed));
+  setPdfTextField(form, p2.line21, formatPdfAmount(result.ftcAllowed + result.otherNonrefundableCreditsAllowed));
+  setPdfTextField(form, p2.line22, formatPdfAmount(result.taxAfterCredits));
+  setPdfTextField(form, p2.line23, formatPdfAmount(result.totalOtherTaxes));
+  setPdfTextField(form, p2.line24, formatPdfAmount(result.totalTax));
+  setPdfTextField(form, p2.line25d, formatPdfAmount(result.inputs.withholding));
+  setPdfTextField(form, p2.line31, formatPdfAmount(result.inputs.otherPayments));
+  setPdfTextField(form, p2.line32, formatPdfAmount(result.totalPayments));
+  setPdfTextField(form, p2.line33, formatPdfAmount(result.totalPayments));
+  setPdfTextField(form, p2.line34, formatPdfAmount(result.refund));
+  setPdfTextField(form, p2.line35a, formatPdfAmount(result.refund));
+  setPdfTextField(form, p2.line36, formatPdfAmount(0));
+  setPdfTextField(form, p2.line37, formatPdfAmount(result.amountOwedBeforePenalty));
+  setPdfTextField(form, p2.line38, formatPdfAmount(result.inputs.penalty));
+
+  form.flatten();
+  return pdfDoc.save();
+}
+
+async function build6251Pdf(result) {
+  const { PDFDocument } = window.PDFLib;
+  const existingPdfBytes = await fetch("./shared/irs_f6251_2025.pdf").then((res) => res.arrayBuffer());
+  const pdfDoc = await PDFDocument.load(existingPdfBytes);
+  const form = pdfDoc.getForm();
+  const line2aValue = result.deductionType === "itemized" ? result.inputs.itemizedTaxes : result.stdDeduction;
+
+  setPdfTextField(form, FORM6251_FIELDS.line1a, formatPdfAmount(result.deductionUsed));
+  setPdfTextField(form, FORM6251_FIELDS.line1b, formatPdfAmount(result.taxableIncome));
+  setPdfTextField(form, FORM6251_FIELDS.line2a, formatPdfAmount(line2aValue));
+  setPdfTextField(form, FORM6251_FIELDS.line2g, formatPdfAmount(result.inputs.amtBondInterest));
+  setPdfTextField(form, FORM6251_FIELDS.line3, formatPdfAmount(result.inputs.amtAdjustments));
+  setPdfTextField(form, FORM6251_FIELDS.line4, formatPdfAmount(result.amtBaseIncome));
+  setPdfTextField(form, FORM6251_FIELDS.line5, formatPdfAmount(result.amtExemption));
+  setPdfTextField(form, FORM6251_FIELDS.line6, formatPdfAmount(result.amtTaxableIncome));
+  setPdfTextField(form, FORM6251_FIELDS.line7, formatPdfAmount(result.tentativeMinimumTax));
+  setPdfTextField(form, FORM6251_FIELDS.line8, formatPdfAmount(result.amtFtcUsed));
+  setPdfTextField(form, FORM6251_FIELDS.line9, formatPdfAmount(Math.max(0, result.tentativeMinimumTax - result.amtFtcUsed)));
+  setPdfTextField(form, FORM6251_FIELDS.line10, formatPdfAmount(result.regularTaxForAmtComparison));
+  setPdfTextField(form, FORM6251_FIELDS.line11, formatPdfAmount(result.amt));
+
+  form.flatten();
+  return pdfDoc.save();
+}
+
+async function build8960Pdf(result) {
+  const { PDFDocument } = window.PDFLib;
+  const existingPdfBytes = await fetch("./shared/irs_f8960_2025.pdf").then((res) => res.arrayBuffer());
+  const pdfDoc = await PDFDocument.load(existingPdfBytes);
+  const form = pdfDoc.getForm();
+  const netGainForInvestmentTax = Math.max(0, result.capNet.ordinaryCapGain + result.capNet.prefCapGain);
+  const totalInvestmentIncome = result.inputs.interest + result.inputs.dividends + netGainForInvestmentTax;
+
+  setPdfTextField(form, FORM8960_FIELDS.line1, formatPdfAmount(result.inputs.interest));
+  setPdfTextField(form, FORM8960_FIELDS.line2, formatPdfAmount(result.inputs.dividends));
+  setPdfTextField(form, FORM8960_FIELDS.line3, formatPdfAmount(0));
+  setPdfTextField(form, FORM8960_FIELDS.line4c, formatPdfAmount(0));
+  setPdfTextField(form, FORM8960_FIELDS.line5a, formatPdfAmount(netGainForInvestmentTax));
+  setPdfTextField(form, FORM8960_FIELDS.line5d, formatPdfAmount(netGainForInvestmentTax));
+  setPdfTextField(form, FORM8960_FIELDS.line8, formatPdfAmount(totalInvestmentIncome));
+  setPdfTextField(form, FORM8960_FIELDS.line9a, formatPdfAmount(result.investmentExpensesUsed));
+  setPdfTextField(form, FORM8960_FIELDS.line9d, formatPdfAmount(result.investmentExpensesUsed));
+  setPdfTextField(form, FORM8960_FIELDS.line11, formatPdfAmount(result.investmentExpensesUsed));
+  setPdfTextField(form, FORM8960_FIELDS.line12, formatPdfAmount(result.nii));
+  setPdfTextField(form, FORM8960_FIELDS.line13, formatPdfAmount(result.agi));
+  setPdfTextField(form, FORM8960_FIELDS.line14, formatPdfAmount(result.inputs.niitThreshold));
+  setPdfTextField(form, FORM8960_FIELDS.line15, formatPdfAmount(result.magiExcess));
+  setPdfTextField(form, FORM8960_FIELDS.line16, formatPdfAmount(result.niitBase));
+  setPdfTextField(form, FORM8960_FIELDS.line17, formatPdfAmount(result.niit));
+
+  form.flatten();
+  return pdfDoc.save();
+}
+
+async function combinePdfDocuments(pdfByteArrays) {
+  const { PDFDocument } = window.PDFLib;
+  const merged = await PDFDocument.create();
+
+  for (const bytes of pdfByteArrays) {
+    const doc = await PDFDocument.load(bytes);
+    const copied = await merged.copyPages(doc, doc.getPageIndices());
+    copied.forEach((page) => merged.addPage(page));
+  }
+
+  return merged.save();
 }
 
 function triggerPdfDownload(bytes, filename) {
