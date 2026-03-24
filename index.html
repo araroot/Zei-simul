@@ -19,7 +19,7 @@
         <div>
           <div class="eyebrow">US Federal Income Tax · MFJ</div>
           <h1>Short-Term vs Long-Term Capital Gains</h1>
-          <p class="subtitle">Heatmap tab is unchanged. New tab extends modeling from Summary_2025 inputs.</p>
+          <p class="subtitle">Heatmap tab is unchanged. Summary tab keeps the workbook view. Return Builder starts from raw source inputs and rolls forward into the forms.</p>
         </div>
         <div class="chips">
           <div class="chip">Standard Deduction</div>
@@ -31,6 +31,7 @@
       <nav class="top-tabs">
         <button class="top-tab active" data-panel="panel-heatmap">Heatmap</button>
         <button class="top-tab" data-panel="panel-summary">2025 Summary Calculator</button>
+        <button class="top-tab" data-panel="panel-builder">Return Builder</button>
       </nav>
 
       <main>
@@ -317,10 +318,198 @@
             </section>
           </div>
         </section>
+
+        <section id="panel-builder" class="tab-panel">
+          <div class="stack">
+            <section class="card">
+              <h2>First-Principles Inputs</h2>
+              <p class="hint">Enter source numbers in plain English. This tab builds the return forward into Form 1040, Form 6251, Form 8960, and Form 1116 previews instead of back-solving from finished tax-return lines.</p>
+
+              <div class="builder-section">
+                <div class="builder-section-title">US Income</div>
+                <div class="builder-grid">
+                  <label class="field-inline"><span>W-2 wages (US)</span><input id="builder-wages-us" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Interest (US)</span><input id="builder-interest-us" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Dividends (US)</span><input id="builder-dividends-us" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Dividends taxed at lower rates (US)</span><input id="builder-qualified-dividends-us" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Short-term gains / losses (US)</span><input id="builder-stcg-us" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Long-term gains / losses (US)</span><input id="builder-ltcg-us" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Other ordinary income (US)</span><input id="builder-other-us" type="number" step="1" /></label>
+                </div>
+              </div>
+
+              <div class="builder-section">
+                <div class="builder-section-title">Foreign Passive Income</div>
+                <div class="builder-grid">
+                  <label class="field-inline"><span>Interest (foreign)</span><input id="builder-interest-foreign" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Dividends (foreign)</span><input id="builder-dividends-foreign" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Dividends taxed at lower rates (foreign)</span><input id="builder-qualified-dividends-foreign" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Short-term gains / losses (foreign)</span><input id="builder-stcg-foreign" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Long-term gains / losses (foreign)</span><input id="builder-ltcg-foreign" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Foreign retirement / annuity / EPF income</span><input id="builder-foreign-passive-other" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Foreign taxes on foreign gains</span><input id="builder-ftax-passive-gains" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Foreign taxes on foreign dividends</span><input id="builder-ftax-passive-dividends" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Foreign taxes on foreign interest</span><input id="builder-ftax-passive-interest" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Foreign taxes on foreign retirement / annuity</span><input id="builder-ftax-passive-other" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Passive FTC carryover</span><input id="builder-ftc-carry-passive" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Expenses directly tied to foreign passive income</span><input id="builder-direct-passive-deductions" type="number" step="1" /></label>
+                </div>
+              </div>
+
+              <div class="builder-section">
+                <div class="builder-section-title">Foreign General Income</div>
+                <div class="builder-grid">
+                  <label class="field-inline"><span>Foreign earned / business income</span><input id="builder-foreign-general-income" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Foreign taxes on general-category income</span><input id="builder-ftax-general" type="number" step="1" /></label>
+                  <label class="field-inline"><span>General FTC carryover</span><input id="builder-ftc-carry-general" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Expenses directly tied to foreign general income</span><input id="builder-direct-general-deductions" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Excluded foreign income / refund</span><input id="builder-foreign-excluded-income" type="number" step="1" /></label>
+                </div>
+              </div>
+
+              <div class="builder-section">
+                <div class="builder-section-title">Deductions And Adjustments</div>
+                <div class="builder-grid">
+                  <label class="field-inline"><span>State and local taxes (SALT)</span><input id="builder-salt" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Mortgage interest</span><input id="builder-mortgage-interest" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Other itemized deductions</span><input id="builder-other-itemized" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Investment expenses</span><input id="builder-investment-expenses" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Tax-free bond interest counted for AMT</span><input id="builder-amt-bond-interest" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Other AMT adjustments</span><input id="builder-amt-adjustments" type="number" step="1" /></label>
+                </div>
+              </div>
+
+              <div class="builder-section">
+                <div class="builder-section-title">Credits, Payments, And Settings</div>
+                <div class="builder-grid">
+                  <label class="field-inline"><span>Minimum-tax foreign tax credit</span><input id="builder-amt-ftc" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Other nonrefundable credits</span><input id="builder-other-credits" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Other taxes besides NIIT</span><input id="builder-other-taxes" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Federal withholding</span><input id="builder-withholding" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Other payments / refundable credits</span><input id="builder-other-payments" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Underpayment penalty</span><input id="builder-penalty" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Standard deduction (2025 MFJ default)</span><input id="builder-std-ded" type="number" step="1" /></label>
+                  <label class="field-inline"><span>NIIT threshold (2025 MFJ default)</span><input id="builder-niit-threshold" type="number" step="1" /></label>
+                  <label class="field-inline"><span>Capital loss deduction cap</span><input id="builder-caploss-cap" type="number" step="1" /></label>
+                </div>
+              </div>
+              <div class="actions-row">
+                <button id="builder-recalc" class="btn">Build Return From Inputs</button>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Input Bridge</h2>
+              <p class="hint">This shows how your raw English inputs roll into the main return and the FTC baskets before the form previews below.</p>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Bridge Item</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="builder-bridge-output"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Form 1040 Preview</h2>
+              <p class="hint">Main return preview built from the raw inputs above.</p>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Form 1040 / Schedule Line</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="builder-1040-output"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Form 6251 Preview</h2>
+              <p class="hint">Minimum-tax detail derived from the same raw inputs.</p>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Form 6251 Line</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="builder-amt-output"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Form 8960 Preview</h2>
+              <p class="hint">Net investment income tax detail built from interest, dividends, gains, and investment expenses.</p>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Form 8960 Line</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="builder-niit-output"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Form 1116 Passive Preview</h2>
+              <p class="hint">Passive basket preview using the foreign dividends, interest, gains, retirement income, deductions, and foreign taxes entered above.</p>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Form 1116 Passive Item</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="builder-1116-passive-output"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Form 1116 General Preview</h2>
+              <p class="hint">General basket preview using the foreign earned / business income and general-category foreign taxes entered above.</p>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Form 1116 General Item</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="builder-1116-general-output"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Builder Assumptions</h2>
+              <ul class="assumptions" id="builder-assumptions"></ul>
+            </section>
+          </div>
+        </section>
   </main>
     </div>
 
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="./app.js?v=20260324l"></script>
+    <script src="./app.js?v=20260324m"></script>
   </body>
 </html>

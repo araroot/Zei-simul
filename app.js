@@ -35,6 +35,10 @@ const LTCG_THRESHOLDS_2025 = {
 const AMT_EXEMPTION_2025_MFJ = 137000;
 const AMT_EXEMPTION_PHASEOUT_2025_MFJ = 1252700;
 const AMT_26_RATE_CEILING_2025_MFJ = 239100;
+const FTC_LINE18_15_REDUCTION = 0.5946;
+const FTC_LINE18_20_REDUCTION = 0.4595;
+const FTC_LINE1A_15_INCLUDE = 1 - FTC_LINE18_15_REDUCTION;
+const FTC_LINE1A_20_INCLUDE = 1 - FTC_LINE18_20_REDUCTION;
 
 const HEATMAP_INCOME_BUCKETS = [600000, 800000, 1000000, 1200000, 1400000];
 const AFTER_TAX_INCOME_BUCKETS = [
@@ -255,6 +259,99 @@ const sum1116Status = document.getElementById("sum1116-status");
 const sum1116Preview = document.getElementById("sum1116-preview");
 const summaryScenarioTabs = Array.from(document.querySelectorAll("#summary-scenario-tabs .scenario-tab"));
 
+const builderInputs = {
+  wagesUs: document.getElementById("builder-wages-us"),
+  interestUs: document.getElementById("builder-interest-us"),
+  interestForeign: document.getElementById("builder-interest-foreign"),
+  dividendsUs: document.getElementById("builder-dividends-us"),
+  dividendsForeign: document.getElementById("builder-dividends-foreign"),
+  qualifiedDividendsUs: document.getElementById("builder-qualified-dividends-us"),
+  qualifiedDividendsForeign: document.getElementById("builder-qualified-dividends-foreign"),
+  stcgUs: document.getElementById("builder-stcg-us"),
+  stcgForeign: document.getElementById("builder-stcg-foreign"),
+  ltcgUs: document.getElementById("builder-ltcg-us"),
+  ltcgForeign: document.getElementById("builder-ltcg-foreign"),
+  otherUs: document.getElementById("builder-other-us"),
+  foreignPassiveOther: document.getElementById("builder-foreign-passive-other"),
+  foreignGeneralIncome: document.getElementById("builder-foreign-general-income"),
+  foreignExcludedIncome: document.getElementById("builder-foreign-excluded-income"),
+  salt: document.getElementById("builder-salt"),
+  mortgageInterest: document.getElementById("builder-mortgage-interest"),
+  otherItemized: document.getElementById("builder-other-itemized"),
+  investmentExpenses: document.getElementById("builder-investment-expenses"),
+  directPassiveDeductions: document.getElementById("builder-direct-passive-deductions"),
+  directGeneralDeductions: document.getElementById("builder-direct-general-deductions"),
+  amtBondInterest: document.getElementById("builder-amt-bond-interest"),
+  amtAdjustments: document.getElementById("builder-amt-adjustments"),
+  ftaxPassiveGains: document.getElementById("builder-ftax-passive-gains"),
+  ftaxPassiveDividends: document.getElementById("builder-ftax-passive-dividends"),
+  ftaxPassiveInterest: document.getElementById("builder-ftax-passive-interest"),
+  ftaxPassiveOther: document.getElementById("builder-ftax-passive-other"),
+  ftaxGeneral: document.getElementById("builder-ftax-general"),
+  ftcCarryPassive: document.getElementById("builder-ftc-carry-passive"),
+  ftcCarryGeneral: document.getElementById("builder-ftc-carry-general"),
+  amtFtc: document.getElementById("builder-amt-ftc"),
+  otherCredits: document.getElementById("builder-other-credits"),
+  otherTaxes: document.getElementById("builder-other-taxes"),
+  withholding: document.getElementById("builder-withholding"),
+  otherPayments: document.getElementById("builder-other-payments"),
+  penalty: document.getElementById("builder-penalty"),
+  stdDeduction: document.getElementById("builder-std-ded"),
+  niitThreshold: document.getElementById("builder-niit-threshold"),
+  capLossCap: document.getElementById("builder-caploss-cap")
+};
+
+const builderRecalcBtn = document.getElementById("builder-recalc");
+const builderBridgeOutput = document.getElementById("builder-bridge-output");
+const builder1040Output = document.getElementById("builder-1040-output");
+const builderAmtOutput = document.getElementById("builder-amt-output");
+const builderNiitOutput = document.getElementById("builder-niit-output");
+const builder1116PassiveOutput = document.getElementById("builder-1116-passive-output");
+const builder1116GeneralOutput = document.getElementById("builder-1116-general-output");
+const builderAssumptions = document.getElementById("builder-assumptions");
+
+const DEFAULT_BUILDER_INPUTS = {
+  wagesUs: 0,
+  interestUs: 0,
+  interestForeign: 22672,
+  dividendsUs: 0,
+  dividendsForeign: 24036,
+  qualifiedDividendsUs: 0,
+  qualifiedDividendsForeign: 24036,
+  stcgUs: 0,
+  stcgForeign: 0,
+  ltcgUs: 0,
+  ltcgForeign: 741452,
+  otherUs: 0,
+  foreignPassiveOther: 75449,
+  foreignGeneralIncome: 0,
+  foreignExcludedIncome: 0,
+  salt: 10000,
+  mortgageInterest: 26878,
+  otherItemized: 0,
+  investmentExpenses: 6467,
+  directPassiveDeductions: 0,
+  directGeneralDeductions: 0,
+  amtBondInterest: 0,
+  amtAdjustments: 0,
+  ftaxPassiveGains: 124000,
+  ftaxPassiveDividends: 0,
+  ftaxPassiveInterest: 0,
+  ftaxPassiveOther: 0,
+  ftaxGeneral: 0,
+  ftcCarryPassive: 0,
+  ftcCarryGeneral: 0,
+  amtFtc: 81143,
+  otherCredits: 0,
+  otherTaxes: 0,
+  withholding: 0,
+  otherPayments: 0,
+  penalty: 2089,
+  stdDeduction: 31500,
+  niitThreshold: 250000,
+  capLossCap: 3000
+};
+
 const state = {
   selections: [
     { income: 800000, stPct: 40 },
@@ -264,6 +361,9 @@ const state = {
     activeScenario: "A",
     scenarios: {},
     form1116Scenarios: {}
+  },
+  builder: {
+    inputs: { ...DEFAULT_BUILDER_INPUTS }
   }
 };
 
@@ -302,6 +402,17 @@ function parseNumber(input, fallback = 0) {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function grossPositive(...values) {
+  return values.reduce((sum, value) => sum + Math.max(0, Number(value) || 0), 0);
+}
+
+function renderRows(target, rows) {
+  if (!target) return;
+  target.innerHTML = rows
+    .map(([label, value, note]) => `<tr><td>${label}</td><td>${value}</td><td>${note}</td></tr>`)
+    .join("");
 }
 
 function cloneScenario(values) {
@@ -383,6 +494,90 @@ function sanitizeSummaryScenario(s) {
   }
 
   return scenario;
+}
+
+function sanitizeBuilderInputs(values) {
+  const safe = {
+    wagesUs: Math.max(0, Number(values.wagesUs) || 0),
+    interestUs: Math.max(0, Number(values.interestUs) || 0),
+    interestForeign: Math.max(0, Number(values.interestForeign) || 0),
+    dividendsUs: Math.max(0, Number(values.dividendsUs) || 0),
+    dividendsForeign: Math.max(0, Number(values.dividendsForeign) || 0),
+    qualifiedDividendsUs: Math.max(0, Number(values.qualifiedDividendsUs) || 0),
+    qualifiedDividendsForeign: Math.max(0, Number(values.qualifiedDividendsForeign) || 0),
+    stcgUs: Number(values.stcgUs) || 0,
+    stcgForeign: Number(values.stcgForeign) || 0,
+    ltcgUs: Number(values.ltcgUs) || 0,
+    ltcgForeign: Number(values.ltcgForeign) || 0,
+    otherUs: Number(values.otherUs) || 0,
+    foreignPassiveOther: Math.max(0, Number(values.foreignPassiveOther) || 0),
+    foreignGeneralIncome: Math.max(0, Number(values.foreignGeneralIncome) || 0),
+    foreignExcludedIncome: Math.max(0, Number(values.foreignExcludedIncome) || 0),
+    salt: Math.max(0, Number(values.salt) || 0),
+    mortgageInterest: Math.max(0, Number(values.mortgageInterest) || 0),
+    otherItemized: Math.max(0, Number(values.otherItemized) || 0),
+    investmentExpenses: Math.max(0, Number(values.investmentExpenses) || 0),
+    directPassiveDeductions: Math.max(0, Number(values.directPassiveDeductions) || 0),
+    directGeneralDeductions: Math.max(0, Number(values.directGeneralDeductions) || 0),
+    amtBondInterest: Math.max(0, Number(values.amtBondInterest) || 0),
+    amtAdjustments: Number(values.amtAdjustments) || 0,
+    ftaxPassiveGains: Math.max(0, Number(values.ftaxPassiveGains) || 0),
+    ftaxPassiveDividends: Math.max(0, Number(values.ftaxPassiveDividends) || 0),
+    ftaxPassiveInterest: Math.max(0, Number(values.ftaxPassiveInterest) || 0),
+    ftaxPassiveOther: Math.max(0, Number(values.ftaxPassiveOther) || 0),
+    ftaxGeneral: Math.max(0, Number(values.ftaxGeneral) || 0),
+    ftcCarryPassive: Math.max(0, Number(values.ftcCarryPassive) || 0),
+    ftcCarryGeneral: Math.max(0, Number(values.ftcCarryGeneral) || 0),
+    amtFtc: Math.max(0, Number(values.amtFtc) || 0),
+    otherCredits: Math.max(0, Number(values.otherCredits) || 0),
+    otherTaxes: Math.max(0, Number(values.otherTaxes) || 0),
+    withholding: Math.max(0, Number(values.withholding) || 0),
+    otherPayments: Math.max(0, Number(values.otherPayments) || 0),
+    penalty: Math.max(0, Number(values.penalty) || 0),
+    stdDeduction: Math.max(0, Number(values.stdDeduction) || 0),
+    niitThreshold: Math.max(0, Number(values.niitThreshold) || 0),
+    capLossCap: Math.max(0, Number(values.capLossCap) || 0)
+  };
+
+  safe.qualifiedDividendsUs = clamp(safe.qualifiedDividendsUs, 0, safe.dividendsUs);
+  safe.qualifiedDividendsForeign = clamp(safe.qualifiedDividendsForeign, 0, safe.dividendsForeign);
+  return safe;
+}
+
+function builderToSummaryInputs(builder) {
+  const safe = sanitizeBuilderInputs(builder);
+  return sanitizeSummaryScenario({
+    stcg: safe.stcgUs + safe.stcgForeign,
+    ltcg: safe.ltcgUs + safe.ltcgForeign,
+    dividends: safe.dividendsUs + safe.dividendsForeign,
+    qualifiedDividends: safe.qualifiedDividendsUs + safe.qualifiedDividendsForeign,
+    interest: safe.interestUs + safe.interestForeign,
+    other: safe.wagesUs + safe.otherUs + safe.foreignPassiveOther + safe.foreignGeneralIncome,
+    regularTaxOverride: null,
+    investmentExpenses: safe.investmentExpenses,
+    itemizedTaxes: safe.salt,
+    itemizedInterest: safe.mortgageInterest,
+    itemizedOther: safe.otherItemized,
+    usStcg: safe.stcgUs,
+    usLtcg: safe.ltcgUs,
+    usDividends: safe.dividendsUs,
+    usInterest: safe.interestUs,
+    usOther: safe.wagesUs + safe.otherUs,
+    foreignTaxes: safe.ftaxPassiveGains + safe.ftaxPassiveDividends + safe.ftaxPassiveInterest + safe.ftaxPassiveOther + safe.ftaxGeneral,
+    ftcCarryover: safe.ftcCarryPassive + safe.ftcCarryGeneral,
+    otherCredits: safe.otherCredits,
+    stdDeduction: safe.stdDeduction,
+    niitThreshold: safe.niitThreshold,
+    capLossCap: safe.capLossCap,
+    amtBondInterest: safe.amtBondInterest,
+    amtLine7Override: null,
+    amtAdjustments: safe.amtAdjustments,
+    amtFtc: safe.amtFtc,
+    otherTaxes: safe.otherTaxes,
+    withholding: safe.withholding,
+    otherPayments: safe.otherPayments,
+    penalty: safe.penalty
+  });
 }
 
 function buildSimulatedSummaryScenarios() {
@@ -689,7 +884,7 @@ function computeScenarioBPassiveForm(form1116) {
     - (buckets.atTwenty * 0.4595)
     - (buckets.atFifteen * 0.5946)
     - buckets.atZero;
-  const line19 = line18 > 0 ? line17 / line18 : 0;
+  const line19 = line18 > 0 ? clamp(line17 / line18, 0, 1) : 0;
   const line20 = result.regularTax;
   const line21 = line20 * line19;
   const line22 = 0;
@@ -1580,9 +1775,7 @@ function renderSummaryOutput(result) {
   }).join("");
 }
 
-function render1040Preview(result) {
-  if (!sum1040Output) return;
-
+function get1040PreviewRows(result) {
   const schedule3Line1 = result.ftcAllowed;
   const schedule3Line8 = result.ftcAllowed + result.otherNonrefundableCreditsAllowed;
   const schedule3Line15 = result.inputs.otherPayments;
@@ -1605,10 +1798,10 @@ function render1040Preview(result) {
   const form1040Line37 = result.amountOwedBeforePenalty;
   const form1040Line38 = result.inputs.penalty;
 
-  const rows = [
-    ["Form 1040, line 9. Total income", toMoney(result.totalIncome), "Income total used by this model"],
+  return [
+    ["Form 1040, line 9. Total income", toMoney(result.totalIncome), "Wages / other ordinary income + interest + dividends + net capital gain or loss included in this model."],
     ["Form 1040, line 10. Adjustments to income", toMoney(0), "No above-the-line adjustments modeled"],
-    ["Form 1040, line 11. Adjusted gross income", toMoney(result.agi), "AGI used throughout the return preview"],
+    ["Form 1040, line 11. Adjusted gross income", toMoney(result.agi), "Total income minus modeled above-the-line adjustments. This builder currently assumes no above-the-line adjustments."],
     ["Form 1040, line 12. Standard deduction or itemized deductions", toMoney(result.deductionUsed), `Using ${result.deductionType} deduction`],
     ["Form 1040, line 13. Qualified business income deduction", toMoney(0), "Not modeled"],
     ["Form 1040, line 14. Add lines 12 and 13", toMoney(result.deductionUsed), "Total deductions"],
@@ -1637,19 +1830,18 @@ function render1040Preview(result) {
     ["Form 1040, line 38. Estimated tax penalty", toMoney(form1040Line38), "Underpayment penalty input"],
     ["Bottom line after line 38", toMoney(result.amountOwed), "Total amount due including penalty"]
   ];
-
-  sum1040Output.innerHTML = rows
-    .map(([k, v, n]) => `<tr><td>${k}</td><td>${v}</td><td>${n}</td></tr>`)
-    .join("");
 }
 
-function renderAmtDetail(result) {
-  if (!sumAmtOutput) return;
+function render1040Preview(result, target = sum1040Output) {
+  renderRows(target, get1040PreviewRows(result));
+}
 
-  const rows = [
+function getAmtDetailRows(result) {
+  const line2aValue = result.deductionType === "itemized" ? result.inputs.itemizedTaxes : result.stdDeduction;
+  return [
     ["Line 1a. Subtract Schedule 1-A (Form 1040), line 37, from Form 1040, line 14", toMoney(result.deductionUsed), "Using the deduction shown on the main return"],
     ["Line 1b. Subtract line 1a from Form 1040, line 11b", toMoney(result.taxableIncome), "Regular taxable income before minimum-tax adjustments"],
-    ["Line 2a. Taxes from Schedule A (Form 1040), line 7", toMoney(result.inputs.itemizedTaxes), "State and local taxes added back for AMT"],
+    ["Line 2a. Taxes from Schedule A (Form 1040), line 7", toMoney(line2aValue), result.deductionType === "itemized" ? "State and local taxes added back for AMT." : "Standard deduction added back for AMT because this builder run is not itemizing."],
     ["Line 2g. Interest from specified private activity bonds exempt from regular tax", toMoney(result.inputs.amtBondInterest), "Use only if applicable"],
     ["Line 3. Other adjustments, including income-based related adjustments", toMoney(result.inputs.amtAdjustments), "Catch-all AMT adjustment input"],
     ["Line 4. Alternative minimum taxable income", toMoney(result.amtBaseIncome), "Combine taxable income and AMT adjustments"],
@@ -1661,19 +1853,17 @@ function renderAmtDetail(result) {
     ["Line 10. Regular tax for AMT comparison", toMoney(result.regularTaxForAmtComparison), "Regular tax after regular foreign tax credit"],
     ["Line 11. AMT", toMoney(result.amt), "Line 9 minus line 10, if positive"]
   ];
-
-  sumAmtOutput.innerHTML = rows
-    .map(([k, v, n]) => `<tr><td>${k}</td><td>${v}</td><td>${n}</td></tr>`)
-    .join("");
 }
 
-function renderNiitDetail(result) {
-  if (!sumNiitOutput) return;
+function renderAmtDetail(result, target = sumAmtOutput) {
+  renderRows(target, getAmtDetailRows(result));
+}
 
+function getNiitDetailRows(result) {
   const netGainForInvestmentTax = Math.max(0, result.capNet.ordinaryCapGain + result.capNet.prefCapGain);
   const totalInvestmentIncome = result.inputs.interest + result.inputs.dividends + netGainForInvestmentTax;
 
-  const rows = [
+  return [
     ["Line 1. Taxable interest", toMoney(result.inputs.interest), "Taxable interest included in net investment income"],
     ["Line 2. Ordinary dividends", toMoney(result.inputs.dividends), "Total ordinary dividends"],
     ["Line 3. Annuities", toMoney(0), "Not separately modeled"],
@@ -1689,10 +1879,417 @@ function renderNiitDetail(result) {
     ["Line 16. Enter the smaller of line 12 or line 15", toMoney(result.niitBase), "Amount subject to NIIT"],
     ["Line 17. Net investment income tax for individuals", toMoney(result.niit), "3.8% of line 16"]
   ];
+}
 
-  sumNiitOutput.innerHTML = rows
-    .map(([k, v, n]) => `<tr><td>${k}</td><td>${v}</td><td>${n}</td></tr>`)
-    .join("");
+function renderNiitDetail(result, target = sumNiitOutput) {
+  renderRows(target, getNiitDetailRows(result));
+}
+
+function readBuilderInputs() {
+  return sanitizeBuilderInputs({
+    wagesUs: parseNumber(builderInputs.wagesUs),
+    interestUs: parseNumber(builderInputs.interestUs),
+    interestForeign: parseNumber(builderInputs.interestForeign),
+    dividendsUs: parseNumber(builderInputs.dividendsUs),
+    dividendsForeign: parseNumber(builderInputs.dividendsForeign),
+    qualifiedDividendsUs: parseNumber(builderInputs.qualifiedDividendsUs),
+    qualifiedDividendsForeign: parseNumber(builderInputs.qualifiedDividendsForeign),
+    stcgUs: parseNumber(builderInputs.stcgUs),
+    stcgForeign: parseNumber(builderInputs.stcgForeign),
+    ltcgUs: parseNumber(builderInputs.ltcgUs),
+    ltcgForeign: parseNumber(builderInputs.ltcgForeign),
+    otherUs: parseNumber(builderInputs.otherUs),
+    foreignPassiveOther: parseNumber(builderInputs.foreignPassiveOther),
+    foreignGeneralIncome: parseNumber(builderInputs.foreignGeneralIncome),
+    foreignExcludedIncome: parseNumber(builderInputs.foreignExcludedIncome),
+    salt: parseNumber(builderInputs.salt),
+    mortgageInterest: parseNumber(builderInputs.mortgageInterest),
+    otherItemized: parseNumber(builderInputs.otherItemized),
+    investmentExpenses: parseNumber(builderInputs.investmentExpenses),
+    directPassiveDeductions: parseNumber(builderInputs.directPassiveDeductions),
+    directGeneralDeductions: parseNumber(builderInputs.directGeneralDeductions),
+    amtBondInterest: parseNumber(builderInputs.amtBondInterest),
+    amtAdjustments: parseNumber(builderInputs.amtAdjustments),
+    ftaxPassiveGains: parseNumber(builderInputs.ftaxPassiveGains),
+    ftaxPassiveDividends: parseNumber(builderInputs.ftaxPassiveDividends),
+    ftaxPassiveInterest: parseNumber(builderInputs.ftaxPassiveInterest),
+    ftaxPassiveOther: parseNumber(builderInputs.ftaxPassiveOther),
+    ftaxGeneral: parseNumber(builderInputs.ftaxGeneral),
+    ftcCarryPassive: parseNumber(builderInputs.ftcCarryPassive),
+    ftcCarryGeneral: parseNumber(builderInputs.ftcCarryGeneral),
+    amtFtc: parseNumber(builderInputs.amtFtc),
+    otherCredits: parseNumber(builderInputs.otherCredits),
+    otherTaxes: parseNumber(builderInputs.otherTaxes),
+    withholding: parseNumber(builderInputs.withholding),
+    otherPayments: parseNumber(builderInputs.otherPayments),
+    penalty: parseNumber(builderInputs.penalty),
+    stdDeduction: parseNumber(builderInputs.stdDeduction, 31500),
+    niitThreshold: parseNumber(builderInputs.niitThreshold, 250000),
+    capLossCap: parseNumber(builderInputs.capLossCap, 3000)
+  });
+}
+
+function writeBuilderInputs(values) {
+  const safe = sanitizeBuilderInputs(values);
+  Object.entries(builderInputs).forEach(([key, input]) => {
+    if (!input) return;
+    input.value = String(Math.round(safe[key] || 0));
+  });
+}
+
+function getPreferentialBucketAllocation(qualifiedDividendsTotal, longTermGainTotal, breakdown) {
+  let remainingQualified = Math.max(0, qualifiedDividendsTotal);
+  let remainingLongTerm = Math.max(0, longTermGainTotal);
+
+  const qd0 = Math.min(remainingQualified, breakdown.atZero);
+  remainingQualified -= qd0;
+  const lt0 = Math.min(remainingLongTerm, Math.max(0, breakdown.atZero - qd0));
+  remainingLongTerm -= lt0;
+
+  const qd15 = Math.min(remainingQualified, breakdown.atFifteen);
+  remainingQualified -= qd15;
+  const lt15 = Math.min(remainingLongTerm, Math.max(0, breakdown.atFifteen - qd15));
+  remainingLongTerm -= lt15;
+
+  const qd20 = Math.min(remainingQualified, breakdown.atTwenty);
+  remainingQualified -= qd20;
+  const lt20 = Math.min(remainingLongTerm, Math.max(0, breakdown.atTwenty - qd20));
+
+  return { qd0, qd15, qd20, lt0, lt15, lt20 };
+}
+
+function getForm1116AdjustedTaxableIncome(result) {
+  return Math.max(
+    0,
+    result.taxableIncome
+      - result.ltcgBreakdown.atZero
+      - result.ltcgBreakdown.atFifteen * FTC_LINE18_15_REDUCTION
+      - result.ltcgBreakdown.atTwenty * FTC_LINE18_20_REDUCTION
+  );
+}
+
+function buildBuilderBridgeRows(builder, result) {
+  const passiveForm = computeBuilderForm1116(builder, result, "passive");
+  const generalForm = computeBuilderForm1116(builder, result, "general");
+  const passiveForeignGross = grossPositive(
+    builder.stcgForeign,
+    builder.ltcgForeign,
+    builder.dividendsForeign,
+    builder.interestForeign,
+    builder.foreignPassiveOther
+  );
+  const generalForeignGross = grossPositive(builder.foreignGeneralIncome);
+  const worldwideGross = grossPositive(
+    builder.wagesUs,
+    builder.interestUs,
+    builder.interestForeign,
+    builder.dividendsUs,
+    builder.dividendsForeign,
+    builder.stcgUs,
+    builder.stcgForeign,
+    builder.ltcgUs,
+    builder.ltcgForeign,
+    builder.otherUs,
+    builder.foreignPassiveOther,
+    builder.foreignGeneralIncome
+  );
+
+  return [
+    ["Deduction used on Form 1040", toMoney(result.deductionUsed), `Using ${result.deductionType} deduction in this builder run.`],
+    ["US ordinary income pool", toMoney(builder.wagesUs + builder.otherUs), "W-2 wages + other ordinary income (US)"],
+    ["Total interest used on return", toMoney(builder.interestUs + builder.interestForeign), "US interest + foreign interest"],
+    ["Total dividends used on return", toMoney(builder.dividendsUs + builder.dividendsForeign), "US dividends + foreign dividends"],
+    ["Qualified dividends used on return", toMoney(builder.qualifiedDividendsUs + builder.qualifiedDividendsForeign), "US qualified dividends + foreign qualified dividends"],
+    ["Net short-term gain / loss used on return", toMoney(builder.stcgUs + builder.stcgForeign), "US short-term + foreign short-term"],
+    ["Net long-term gain / loss used on return", toMoney(builder.ltcgUs + builder.ltcgForeign), "US long-term + foreign long-term"],
+    ["Foreign passive gross income for Form 1116 ratio", toMoney(passiveForeignGross), "Positive foreign passive items only: gains, dividends, interest, retirement / annuity"],
+    ["Foreign general gross income for Form 1116 ratio", toMoney(generalForeignGross), "Positive foreign earned / business income only"],
+    ["Worldwide gross income for Form 1116 ratio", toMoney(worldwideGross), "Positive gross income from all modeled sources except excluded foreign income / refund"],
+    ["Excluded foreign income / refund kept out of return math", toMoney(builder.foreignExcludedIncome), "Tracked for context only. Not included in Form 1040 or either Form 1116 basket in this builder."],
+    ["Total current-year passive foreign taxes", toMoney(builder.ftaxPassiveGains + builder.ftaxPassiveDividends + builder.ftaxPassiveInterest + builder.ftaxPassiveOther), "Foreign taxes entered against passive income components"],
+    ["Total current-year general foreign taxes", toMoney(builder.ftaxGeneral), "Foreign taxes entered against general-category income"],
+    ["Passive Form 1116 allowed credit", toMoney(passiveForm.line24), "Passive basket line 24 from the current builder run."],
+    ["General Form 1116 allowed credit", toMoney(generalForm.line24), "General basket line 24 from the current builder run."],
+    ["Regular FTC used in Form 1040 preview", toMoney(result.ftcAllowed), "Limited by regular-tax FTC cap in the current model"],
+    ["AMT FTC used in Form 6251 preview", toMoney(result.amtFtcUsed), "Minimum-tax foreign tax credit input capped at tentative minimum tax"]
+  ];
+}
+
+function computeBuilderForm1116(builder, result, category) {
+  const isPassive = category === "passive";
+  const passiveGrossForRatio = grossPositive(
+    builder.stcgForeign,
+    builder.ltcgForeign,
+    builder.dividendsForeign,
+    builder.interestForeign,
+    builder.foreignPassiveOther
+  );
+  const generalGrossForRatio = grossPositive(builder.foreignGeneralIncome);
+  const worldwideGross = grossPositive(
+    builder.wagesUs,
+    builder.interestUs,
+    builder.interestForeign,
+    builder.dividendsUs,
+    builder.dividendsForeign,
+    builder.stcgUs,
+    builder.stcgForeign,
+    builder.ltcgUs,
+    builder.ltcgForeign,
+    builder.otherUs,
+    builder.foreignPassiveOther,
+    builder.foreignGeneralIncome
+  );
+  const ratioGross = isPassive ? passiveGrossForRatio : generalGrossForRatio;
+  const ratio = worldwideGross > 0 ? ratioGross / worldwideGross : 0;
+
+  const totalQualified = builder.qualifiedDividendsUs + builder.qualifiedDividendsForeign;
+  const totalPositiveLongTerm = Math.max(0, builder.ltcgUs) + Math.max(0, builder.ltcgForeign);
+  const allocation = getPreferentialBucketAllocation(totalQualified, totalPositiveLongTerm, result.ltcgBreakdown);
+
+  const foreignLongTermShare = totalPositiveLongTerm > 0 ? Math.max(0, builder.ltcgForeign) / totalPositiveLongTerm : 0;
+  const foreignQualifiedShare = totalQualified > 0 ? builder.qualifiedDividendsForeign / totalQualified : 0;
+
+  const foreignLt15 = allocation.lt15 * foreignLongTermShare;
+  const foreignLt20 = allocation.lt20 * foreignLongTermShare;
+  const foreignQd15 = allocation.qd15 * foreignQualifiedShare;
+  const foreignQd20 = allocation.qd20 * foreignQualifiedShare;
+
+  const adjustedForeignLongTerm = foreignLt15 * FTC_LINE1A_15_INCLUDE + foreignLt20 * FTC_LINE1A_20_INCLUDE;
+  const adjustedForeignQualifiedDividends = foreignQd15 * FTC_LINE1A_15_INCLUDE + foreignQd20 * FTC_LINE1A_20_INCLUDE;
+
+  const passiveForeignNonqualifiedDividends = Math.max(0, builder.dividendsForeign - builder.qualifiedDividendsForeign);
+  const passiveForeignPositiveSt = Math.max(0, builder.stcgForeign);
+  const lossAdjustmentFactor = result.ltcgBreakdown.atTwenty > 0
+    ? FTC_LINE1A_20_INCLUDE
+    : result.ltcgBreakdown.atFifteen > 0
+      ? FTC_LINE1A_15_INCLUDE
+      : 0;
+  const adjustedForeignCapitalLoss = isPassive
+    ? (Math.abs(Math.min(0, builder.stcgForeign)) + Math.abs(Math.min(0, builder.ltcgForeign))) * lossAdjustmentFactor
+    : 0;
+
+  const line1a = isPassive
+    ? passiveForeignPositiveSt + adjustedForeignLongTerm + adjustedForeignQualifiedDividends + passiveForeignNonqualifiedDividends + builder.interestForeign + builder.foreignPassiveOther
+    : builder.foreignGeneralIncome;
+  const line2 = isPassive ? builder.directPassiveDeductions : builder.directGeneralDeductions;
+  const line3a = result.deductionType === "itemized"
+    ? builder.salt + builder.otherItemized
+    : result.stdDeduction;
+  const line3b = 0;
+  const line3c = Math.max(0, line3a - line3b);
+  const line3d = ratioGross;
+  const line3e = worldwideGross;
+  const line3f = ratio;
+  const line3g = line3c * line3f;
+  const line4a = result.deductionType === "itemized" ? builder.mortgageInterest * ratio : 0;
+  const line4b = 0;
+  const line5 = adjustedForeignCapitalLoss;
+  const line6 = line2 + line3g + line4a + line4b + line5;
+  const line7 = Math.max(0, line1a - line6);
+  const line8 = isPassive
+    ? builder.ftaxPassiveGains + builder.ftaxPassiveDividends + builder.ftaxPassiveInterest + builder.ftaxPassiveOther
+    : builder.ftaxGeneral;
+  const line9 = line8;
+  const line10 = isPassive ? builder.ftcCarryPassive : builder.ftcCarryGeneral;
+  const line11 = line9 + line10;
+  const line12 = 0;
+  const line13 = 0;
+  const line14 = line11 - line12 + line13;
+  const line15 = line7;
+  const line16 = 0;
+  const line17 = line15 + line16;
+  const line18 = getForm1116AdjustedTaxableIncome(result);
+  const line19 = line18 > 0 ? line17 / line18 : 0;
+  const line20 = result.regularTax;
+  const line21 = line20 * line19;
+  const line22 = 0;
+  const line23 = line21 + line22;
+  const line24 = Math.min(line14, line23);
+
+  return {
+    category,
+    line1a,
+    line2,
+    line3a,
+    line3b,
+    line3c,
+    line3d,
+    line3e,
+    line3f,
+    line3g,
+    line4a,
+    line4b,
+    line5,
+    line6,
+    line7,
+    line8,
+    line9,
+    line10,
+    line11,
+    line12,
+    line13,
+    line14,
+    line15,
+    line16,
+    line17,
+    line18,
+    line19,
+    line20,
+    line21,
+    line22,
+    line23,
+    line24,
+    support: {
+      adjustedForeignLongTerm,
+      adjustedForeignQualifiedDividends,
+      adjustedForeignCapitalLoss,
+      passiveForeignPositiveSt,
+      passiveForeignNonqualifiedDividends,
+      foreignLt15,
+      foreignLt20,
+      foreignQd15,
+      foreignQd20
+    }
+  };
+}
+
+function applyBuilderFtcToResult(baseResult, passiveForm, generalForm) {
+  const ftcAllowed = Math.min(baseResult.regularTax, passiveForm.line24 + generalForm.line24);
+  const ftcAvailable = passiveForm.line14 + generalForm.line14;
+  const ftcLimit = passiveForm.line21 + generalForm.line21;
+  const otherNonrefundableCreditsAllowed = Math.min(
+    Math.max(0, baseResult.inputs.otherCredits),
+    Math.max(0, baseResult.regularTax - ftcAllowed)
+  );
+  const regularTaxForAmtComparison = Math.max(0, baseResult.regularTax - ftcAllowed);
+  const amt = Math.max(0, baseResult.tentativeMinimumTax - baseResult.amtFtcUsed - regularTaxForAmtComparison);
+  const taxBeforeCredits = baseResult.regularTax + amt;
+  const totalCredits = Math.min(taxBeforeCredits, ftcAllowed + otherNonrefundableCreditsAllowed);
+  const taxAfterCredits = Math.max(0, taxBeforeCredits - totalCredits);
+  const totalOtherTaxes = baseResult.niit + baseResult.inputs.otherTaxes;
+  const totalTax = taxAfterCredits + totalOtherTaxes;
+  const totalPayments = baseResult.inputs.withholding + baseResult.inputs.otherPayments;
+  const amountOwedBeforePenalty = Math.max(0, totalTax - totalPayments);
+  const refund = Math.max(0, totalPayments - totalTax - baseResult.inputs.penalty);
+  const amountOwed = Math.max(0, totalTax + baseResult.inputs.penalty - totalPayments);
+  const effectiveRate = baseResult.totalIncome !== 0 ? (totalTax / baseResult.totalIncome) * 100 : 0;
+
+  return {
+    ...baseResult,
+    ftcAllowed,
+    ftcAvailable,
+    ftcLimit,
+    otherNonrefundableCreditsAllowed,
+    regularTaxForAmtComparison,
+    amt,
+    taxBeforeCredits,
+    totalCredits,
+    taxAfterCredits,
+    totalOtherTaxes,
+    totalTax,
+    totalPayments,
+    amountOwedBeforePenalty,
+    refund,
+    amountOwed,
+    usFederalIncomeTax: totalTax,
+    effectiveRate,
+    afterTaxIncome: baseResult.totalIncome - totalTax
+  };
+}
+
+function getBuilder1116Rows(builder, result, category) {
+  const data = computeBuilderForm1116(builder, result, category);
+  const label = category === "passive" ? "Passive" : "General";
+  const ratioNote = data.line3e > 0
+    ? `${label} basket gross income / worldwide gross income`
+    : "No worldwide gross income entered";
+
+  return [
+    [`Form 1116 ${label}, line 1a`, toMoney(data.line1a), category === "passive"
+      ? "Foreign passive income after capital-gain / qualified-dividend adjustment: foreign ST gain + adjusted foreign LT gain + adjusted foreign qualified dividends + foreign nonqualified dividends + foreign interest + foreign retirement / annuity."
+      : "Foreign earned / business income entered in the general basket."],
+    [`Form 1116 ${label}, line 2`, toMoney(data.line2), "Expenses directly tied to this basket, from the builder inputs."],
+    [`Form 1116 ${label}, line 3a`, toMoney(data.line3a), result.deductionType === "itemized"
+      ? "SALT + other itemized deductions treated as not definitely related to any one income stream."
+      : "Standard deduction used because the builder run did not itemize."],
+    [`Form 1116 ${label}, line 3c`, toMoney(data.line3c), "Line 3a minus line 3b. Line 3b is currently assumed to be 0."],
+    [`Form 1116 ${label}, line 3d`, toMoney(data.line3d), category === "passive"
+      ? "Positive foreign passive gross income for the ratio: foreign gains, dividends, interest, and retirement / annuity only."
+      : "Positive foreign general gross income for the ratio."],
+    [`Form 1116 ${label}, line 3e`, toMoney(data.line3e), "Positive gross income from all modeled sources except excluded foreign income / refund."],
+    [`Form 1116 ${label}, line 3f`, data.line3f.toFixed(4), ratioNote],
+    [`Form 1116 ${label}, line 3g`, toMoney(data.line3g), "Apportioned share of the unallocated deduction pool."],
+    [`Form 1116 ${label}, line 4a`, toMoney(data.line4a), result.deductionType === "itemized"
+      ? "Mortgage interest apportioned by the same gross-income ratio."
+      : "0 because this builder run is using the standard deduction instead of itemizing."],
+    [`Form 1116 ${label}, line 5`, toMoney(data.line5), category === "passive"
+      ? "Adjusted foreign capital loss based on the entered foreign capital losses and the current preferential-rate buckets."
+      : "No separate general-basket capital-loss adjustment modeled."],
+    [`Form 1116 ${label}, line 7`, toMoney(data.line7), "Net foreign-source taxable income in this basket before page 2 limits."],
+    [`Form 1116 ${label}, line 8`, toMoney(data.line8), "Current-year foreign taxes entered for this basket."],
+    [`Form 1116 ${label}, line 10`, toMoney(data.line10), "Carryover entered for this basket."],
+    [`Form 1116 ${label}, line 14`, toMoney(data.line14), "Foreign taxes available for credit after lines 12 and 13 (both assumed 0 here)."],
+    [`Form 1116 ${label}, line 18`, toMoney(data.line18), "Adjusted taxable income denominator after capital-gain-rate adjustments."],
+    [`Form 1116 ${label}, line 20`, toMoney(data.line20), "Form 1040, line 16 tax from the same builder run."],
+    [`Form 1116 ${label}, line 21`, toMoney(data.line21), "Maximum credit for this basket: line 20 × line 19."],
+    [`Form 1116 ${label}, line 24`, toMoney(data.line24), "Allowed credit for this basket before carryforward."],
+    [`Form 1116 ${label}, support`, category === "passive"
+      ? toMoney(data.support.adjustedForeignLongTerm + data.support.adjustedForeignQualifiedDividends)
+      : toMoney(0), category === "passive"
+      ? "Adjusted foreign preferential income included in line 1a."
+      : "No foreign preferential-income adjustment needed in the general basket."]
+  ];
+}
+
+function renderBuilderAssumptions() {
+  if (!builderAssumptions) return;
+  const assumptions = [
+    "This builder uses 2025 MFJ line structure for Form 1040, Form 6251, Form 8960, and Form 1116.",
+    "Excluded foreign income / refund is tracked for context but kept out of Form 1040 income and both Form 1116 baskets.",
+    "Qualified dividends are the dividend amounts that use the lower capital-gain tax rates.",
+    "When foreign qualified dividends and foreign long-term gains share the lower-rate buckets, this builder allocates the 0%, 15%, and 20% buckets to qualified dividends first and then to long-term gains.",
+    "If the builder run itemizes, Form 1116 line 3a is modeled as SALT plus other itemized deductions and Form 1116 line 4a is modeled as mortgage interest apportioned by basket gross-income ratio.",
+    "If the builder run uses the standard deduction, Form 1116 line 3a uses the standard deduction and Form 1116 line 4a is set to 0.",
+    "Mortgage interest and SALT allocation for Form 1116 is still an allocation model. If your preparer uses a more specific workpaper split, enter that later in the dedicated basket-expense fields.",
+    "Form 1116 line 2 uses only the basket-specific direct-expense inputs on this tab.",
+    "Form 8960 uses investment expenses as the offset against investment income.",
+    "Form 6251 uses the AMT foreign tax credit input directly. If that field is blank or low, AMT will usually be overstated.",
+    "The regular FTC used on Form 1040 still uses the current proportional limitation model in this app."
+  ];
+  builderAssumptions.innerHTML = assumptions.map((item) => `<li>${item}</li>`).join("");
+}
+
+function recalcBuilder() {
+  if (!builder1040Output) return;
+  const builder = readBuilderInputs();
+  state.builder.inputs = builder;
+  const preliminaryResult = calculateSummaryTax(builderToSummaryInputs(builder));
+  const passiveForm = computeBuilderForm1116(builder, preliminaryResult, "passive");
+  const generalForm = computeBuilderForm1116(builder, preliminaryResult, "general");
+  const result = applyBuilderFtcToResult(preliminaryResult, passiveForm, generalForm);
+
+  renderRows(builderBridgeOutput, buildBuilderBridgeRows(builder, result));
+  render1040Preview(result, builder1040Output);
+  renderAmtDetail(result, builderAmtOutput);
+  renderNiitDetail(result, builderNiitOutput);
+  renderRows(builder1116PassiveOutput, getBuilder1116Rows(builder, result, "passive"));
+  renderRows(builder1116GeneralOutput, getBuilder1116Rows(builder, result, "general"));
+  renderBuilderAssumptions();
+}
+
+function seedBuilderDefaults() {
+  if (!builderInputs.wagesUs) return;
+  state.builder.inputs = sanitizeBuilderInputs(DEFAULT_BUILDER_INPUTS);
+  writeBuilderInputs(state.builder.inputs);
+}
+
+function bindBuilderEvents() {
+  if (!builderRecalcBtn) return;
+  builderRecalcBtn.addEventListener("click", recalcBuilder);
+  Object.values(builderInputs).forEach((input) => {
+    if (!input) return;
+    input.addEventListener("change", recalcBuilder);
+  });
 }
 
 function render1116Status(message) {
@@ -2143,9 +2740,12 @@ function boot() {
     bindTopTabs();
     refreshHeatmapTab();
     seedSummaryDefaults();
+    seedBuilderDefaults();
     bindSummaryEvents();
+    bindBuilderEvents();
     renderSummaryAssumptions();
     recalcSummary();
+    recalcBuilder();
   } catch (err) {
     if (sumOutput) {
       sumOutput.innerHTML = `<tr><td>Runtime error</td><td>${String(err)}</td><td>Check console for details.</td></tr>`;
