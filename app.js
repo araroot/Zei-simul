@@ -390,6 +390,8 @@ const builderNiitOutput = document.getElementById("builder-niit-output");
 const builder1116PassiveOutput = document.getElementById("builder-1116-passive-output");
 const builder1116GeneralOutput = document.getElementById("builder-1116-general-output");
 const builderAssumptions = document.getElementById("builder-assumptions");
+const qdcgOutput = document.getElementById("qdcg-output");
+const qdcgStatus = document.getElementById("qdcg-status");
 const builderMetricUsIncome = document.getElementById("builder-metric-us-income");
 const builderMetricForeignPassive = document.getElementById("builder-metric-foreign-passive");
 const builderMetricForeignGeneral = document.getElementById("builder-metric-foreign-general");
@@ -2550,6 +2552,88 @@ function renderBuilderAssumptions() {
   builderAssumptions.innerHTML = assumptions.map((item) => `<li>${item}</li>`).join("");
 }
 
+function computeQdcgWorksheet(result) {
+  const line1 = result.taxableIncome;
+  const line2 = result.qualifiedDividends;
+  const line3 = Math.max(0, result.capNet.prefCapGain);
+  const line4 = line2 + line3;
+  const line5 = Math.max(0, line1 - line4);
+  const line6 = 96700;
+  const line7 = Math.min(line1, line6);
+  const line8 = Math.min(line5, line7);
+  const line9 = Math.max(0, line7 - line8);
+  const line10 = Math.min(line1, line4);
+  const line11 = line9;
+  const line12 = Math.max(0, line10 - line11);
+  const line13 = 600050;
+  const line14 = Math.min(line1, line13);
+  const line15 = line5 + line9;
+  const line16 = Math.max(0, line14 - line15);
+  const line17 = Math.min(line12, line16);
+  const line18 = line17 * 0.15;
+  const line19 = line9 + line17;
+  const line20 = Math.max(0, line10 - line19);
+  const line21 = line20 * 0.2;
+  const line22 = calcOrdinaryTax(line5, ORDINARY_BRACKETS_2025);
+  const line23 = line18 + line21 + line22;
+  const line24 = calcOrdinaryTax(line1, ORDINARY_BRACKETS_2025);
+  const line25 = Math.min(line23, line24);
+
+  return {
+    line1, line2, line3, line4, line5, line6, line7, line8, line9, line10,
+    line11, line12, line13, line14, line15, line16, line17, line18, line19,
+    line20, line21, line22, line23, line24, line25
+  };
+}
+
+function renderQdcgWorksheet(result, builder) {
+  if (!qdcgOutput) return;
+
+  const worksheet = computeQdcgWorksheet(result);
+  const likelyScheduleDWorksheet = builder.investmentExpenses > 0;
+  const hasPreferentialIncome = worksheet.line2 > 0 || worksheet.line3 > 0;
+
+  if (qdcgStatus) {
+    if (!hasPreferentialIncome) {
+      qdcgStatus.textContent = "No qualified dividends or net capital gain is currently flowing to the worksheet. The worksheet is shown for completeness, but the preferential-rate path is inactive.";
+    } else if (likelyScheduleDWorksheet) {
+      qdcgStatus.textContent = "Worksheet preview is shown using the official 2025 Qualified Dividends and Capital Gain Tax Worksheet structure. If Form 4952 line 4g is nonzero or another Schedule D Tax Worksheet trigger applies, IRS may require the Schedule D Tax Worksheet instead.";
+    } else {
+      qdcgStatus.textContent = "Worksheet preview is shown using the official 2025 Qualified Dividends and Capital Gain Tax Worksheet structure.";
+    }
+  }
+
+  const rows = [
+    ["Line 1", toMoney(worksheet.line1), "Form 1040, line 15 taxable income"],
+    ["Line 2", toMoney(worksheet.line2), "Form 1040, line 3a qualified dividends"],
+    ["Line 3", toMoney(worksheet.line3), "Net capital gain used for the worksheet from the current builder run"],
+    ["Line 4", toMoney(worksheet.line4), "Line 2 + line 3"],
+    ["Line 5", toMoney(worksheet.line5), "Line 1 - line 4"],
+    ["Line 6", toMoney(worksheet.line6), "2025 MFJ 0% capital-gains threshold"],
+    ["Line 7", toMoney(worksheet.line7), "Smaller of line 1 or line 6"],
+    ["Line 8", toMoney(worksheet.line8), "Smaller of line 5 or line 7"],
+    ["Line 9", toMoney(worksheet.line9), "Line 7 - line 8, taxed at 0%"],
+    ["Line 10", toMoney(worksheet.line10), "Smaller of line 1 or line 4"],
+    ["Line 11", toMoney(worksheet.line11), "Amount from line 9"],
+    ["Line 12", toMoney(worksheet.line12), "Line 10 - line 11"],
+    ["Line 13", toMoney(worksheet.line13), "2025 MFJ 15% / 20% threshold"],
+    ["Line 14", toMoney(worksheet.line14), "Smaller of line 1 or line 13"],
+    ["Line 15", toMoney(worksheet.line15), "Line 5 + line 9"],
+    ["Line 16", toMoney(worksheet.line16), "Line 14 - line 15"],
+    ["Line 17", toMoney(worksheet.line17), "Smaller of line 12 or line 16"],
+    ["Line 18", toMoney(worksheet.line18), "Line 17 × 15%"],
+    ["Line 19", toMoney(worksheet.line19), "Line 9 + line 17"],
+    ["Line 20", toMoney(worksheet.line20), "Line 10 - line 19"],
+    ["Line 21", toMoney(worksheet.line21), "Line 20 × 20%"],
+    ["Line 22", toMoney(worksheet.line22), "Tax on line 5 using 2025 ordinary-income rates"],
+    ["Line 23", toMoney(worksheet.line23), "Line 18 + line 21 + line 22"],
+    ["Line 24", toMoney(worksheet.line24), "Tax on all taxable income using 2025 ordinary-income rates"],
+    ["Line 25", toMoney(worksheet.line25), `Smaller of line 23 or line 24. Current builder regular-tax calculation is ${toMoney(result.regularTaxComputed)}.`]
+  ];
+
+  renderRows(qdcgOutput, rows);
+}
+
 function updateBuilderMetrics(builder, result) {
   if (!builderMetricUsIncome) return;
 
@@ -2592,6 +2676,7 @@ function recalcBuilder() {
   renderNiitDetail(result, builderNiitOutput);
   renderRows(builder1116PassiveOutput, getBuilder1116Rows(builder, result, "passive"));
   renderRows(builder1116GeneralOutput, getBuilder1116Rows(builder, result, "general"));
+  renderQdcgWorksheet(result, builder);
   renderBuilderAssumptions();
   updateBuilderMetrics(builder, result);
   setBuilderPdfStatus("Ready to generate a combined packet with Form 1040, Form 6251, Form 8960, and both Form 1116 forms.");

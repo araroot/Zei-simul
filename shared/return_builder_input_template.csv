@@ -2,7 +2,7 @@ field,value,notes
 tax_year,2025,Leave as 2025 unless you want a different year
 filing_status,MFJ,Married filing jointly
 claim_method,accrued,Use paid or accrued
-resident_country,India,Single-country setup for now
+resident_country,USA,Single-country setup for now. Use USA as country of residence on the template.
 w2_wages_us,,US W-2 wages
 interest_us,,US-source interest
 dividends_us,,Total US dividends
@@ -22,10 +22,10 @@ lt_sale_losses_foreign,,Total foreign long-term sale losses
 retirement_annuity_epf_foreign,,Foreign retirement or EPF income
 foreign_general_income,,Foreign general-category income if any
 excluded_foreign_income_refund,,Foreign income/refund excluded from current return math
-salt,,State and local taxes deducted on Schedule A
-mortgage_interest,,Home mortgage interest deducted on Schedule A
+salt,10000,Default SALT deduction
+mortgage_interest,20411,Default mortgage interest deduction
 other_itemized_deductions,,Other itemized deductions
-investment_expenses,,Investment expenses for Form 8960
+investment_expenses,6467,Investment interest paid / investment expenses
 direct_passive_expenses,,Expenses directly tied to passive foreign income
 direct_general_expenses,,Expenses directly tied to general foreign income
 foreign_tax_on_gains,,Foreign tax paid or accrued on foreign gains

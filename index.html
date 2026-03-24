@@ -32,6 +32,7 @@
         <button class="top-tab active" data-panel="panel-heatmap">Heatmap</button>
         <button class="top-tab" data-panel="panel-summary">2025 Summary Calculator</button>
         <button class="top-tab" data-panel="panel-builder">Return Builder</button>
+        <button class="top-tab" data-panel="panel-qdcg">QDCG Worksheet</button>
       </nav>
 
       <main>
@@ -589,10 +590,32 @@
             </section>
           </div>
         </section>
+
+        <section id="panel-qdcg" class="tab-panel">
+          <div class="stack">
+            <section class="card">
+              <h2>Qualified Dividends And Capital Gain Tax Worksheet</h2>
+              <p class="hint">2025 IRS worksheet preview using the current Return Builder inputs. This drives the regular-tax capital-gains calculation when the Qualified Dividends and Capital Gain Tax Worksheet applies.</p>
+              <div id="qdcg-status" class="status-box"></div>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Worksheet Line</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="qdcg-output"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
   </main>
     </div>
 
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="./app.js?v=20260324o"></script>
+    <script src="./app.js?v=20260324p"></script>
   </body>
 </html>
