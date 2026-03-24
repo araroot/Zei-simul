@@ -209,12 +209,46 @@
                 </table>
               </div>
             </section>
+
+            <section class="card">
+              <h2>Minimum Tax Detail</h2>
+              <p class="hint">This follows the same line order as the minimum-tax form, but the labels are kept in plain English.</p>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Minimum Tax Item</th>
+                      <th>Value</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sum-amt-output"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Investment Income Tax Detail</h2>
+              <p class="hint">This follows the same line order as the net investment income tax form, using your interest, dividends, gains, and investment-expense inputs.</p>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Investment Income Tax Item</th>
+                      <th>Value</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sum-niit-output"></tbody>
+                </table>
+              </div>
+            </section>
           </div>
         </section>
   </main>
     </div>
 
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="./app.js?v=20260324g"></script>
+    <script src="./app.js?v=20260324h"></script>
   </body>
 </html>

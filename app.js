@@ -243,6 +243,8 @@ const sum1116Inputs = {
 const sumRecalcBtn = document.getElementById("sum-recalc");
 const sumAssumptions = document.getElementById("sum-assumptions");
 const sumOutput = document.getElementById("sum-output");
+const sumAmtOutput = document.getElementById("sum-amt-output");
+const sumNiitOutput = document.getElementById("sum-niit-output");
 const sum1116GenerateBtn = document.getElementById("sum1116-generate");
 const sum1116Status = document.getElementById("sum1116-status");
 const sum1116Preview = document.getElementById("sum1116-preview");
@@ -1549,6 +1551,61 @@ function renderSummaryOutput(result) {
   }).join("");
 }
 
+function renderAmtDetail(result) {
+  if (!sumAmtOutput) return;
+
+  const rows = [
+    ["Use the larger deduction from the main return", toMoney(result.deductionUsed), "This is the starting deduction used on the regular return"],
+    ["Taxable income from the main return", toMoney(result.taxableIncome), "Regular taxable income before minimum-tax adjustments"],
+    ["Add back state and local taxes", toMoney(result.inputs.itemizedTaxes), "State and local tax deduction is added back for minimum tax when itemizing"],
+    ["Add back tax-free bond interest that still counts for minimum tax", toMoney(result.inputs.amtBondInterest), "Only use this if you have that kind of bond interest"],
+    ["Other minimum-tax adjustments", toMoney(result.inputs.amtAdjustments), "Catch-all adjustment input for other minimum-tax differences"],
+    ["Minimum-tax income before exemption", toMoney(result.amtBaseIncome), "Taxable income plus minimum-tax addbacks and adjustments"],
+    ["Minimum-tax exemption", toMoney(result.amtExemption), "2025 MFJ exemption after any phaseout"],
+    ["Minimum-tax income after exemption", toMoney(result.amtTaxableIncome), "Amount subject to the minimum-tax rate calculation"],
+    ["Minimum-tax income using ordinary rates", toMoney(result.amtTaxableOrdinary), "Minimum-tax income excluding the lower-rate gains and dividends"],
+    ["Lower-rate amount inside minimum tax", toMoney(result.taxablePref), "Long-term gains plus dividends taxed at lower rates"],
+    ["Minimum-tax ordinary-rate amount", toMoney(result.amtOrdinaryTax), "26% / 28% minimum-tax rates on the ordinary piece"],
+    ["Minimum-tax lower-rate amount", toMoney(result.amtLtcgBreakdown.tax), "Lower-rate gains/dividend tax inside the minimum-tax calculation"],
+    ["Tentative minimum tax before foreign tax credit", toMoney(result.tentativeMinimumTax), "Ordinary-rate amount plus lower-rate amount"],
+    ["Minimum-tax foreign tax credit", toMoney(result.amtFtcUsed), "Separate foreign tax credit used only inside minimum tax"],
+    ["Tentative minimum tax after foreign tax credit", toMoney(Math.max(0, result.tentativeMinimumTax - result.amtFtcUsed)), "Tentative minimum tax net of the minimum-tax foreign tax credit"],
+    ["Regular-tax comparison amount", toMoney(result.regularTaxForAmtComparison), "Regular tax after the regular foreign tax credit"],
+    ["Minimum tax added to the return", toMoney(result.amt), "Extra tax only if tentative minimum tax stays above the regular-tax comparison amount"]
+  ];
+
+  sumAmtOutput.innerHTML = rows
+    .map(([k, v, n]) => `<tr><td>${k}</td><td>${v}</td><td>${n}</td></tr>`)
+    .join("");
+}
+
+function renderNiitDetail(result) {
+  if (!sumNiitOutput) return;
+
+  const netGainForInvestmentTax = Math.max(0, result.capNet.ordinaryCapGain + result.capNet.prefCapGain);
+  const totalInvestmentIncome = result.inputs.interest + result.inputs.dividends + netGainForInvestmentTax;
+
+  const rows = [
+    ["Interest income", toMoney(result.inputs.interest), "Taxable interest included in the investment-income tax"],
+    ["Dividend income", toMoney(result.inputs.dividends), "Use total ordinary dividends here"],
+    ["Annuities", toMoney(0), "Not separately modeled"],
+    ["Business / rental investment income", toMoney(0), "Not separately modeled unless added into other inputs manually"],
+    ["Net gains from sales", toMoney(netGainForInvestmentTax), "Net gains included in the investment-income tax"],
+    ["Total investment income before expenses", toMoney(totalInvestmentIncome), "Interest + dividends + net gains"],
+    ["Expenses tied to investing", toMoney(result.investmentExpensesUsed), "Investment expenses allowed against investment income"],
+    ["Net investment income", toMoney(result.nii), "Investment income after allowed expenses"],
+    ["Modified adjusted gross income", toMoney(result.agi), "This model uses AGI as the modified amount"],
+    ["Threshold", toMoney(result.inputs.niitThreshold), "MFJ threshold input"],
+    ["Amount above threshold", toMoney(result.magiExcess), "Modified AGI minus threshold"],
+    ["Amount actually taxed", toMoney(result.niitBase), "Smaller of net investment income and amount above threshold"],
+    ["Investment income tax", toMoney(result.niit), "3.8% of the taxed amount"]
+  ];
+
+  sumNiitOutput.innerHTML = rows
+    .map(([k, v, n]) => `<tr><td>${k}</td><td>${v}</td><td>${n}</td></tr>`)
+    .join("");
+}
+
 function render1116Status(message) {
   if (!sum1116Status) return;
   sum1116Status.textContent = message;
@@ -1855,6 +1912,8 @@ function recalcSummary() {
   const inputs = readSummaryInputs();
   const result = calculateSummaryTax(inputs);
   renderSummaryOutput(result);
+  renderAmtDetail(result);
+  renderNiitDetail(result);
   render1116Preview();
 }
 
