@@ -335,10 +335,14 @@ const builderInputs = {
   dividendsForeign: document.getElementById("builder-dividends-foreign"),
   qualifiedDividendsUs: document.getElementById("builder-qualified-dividends-us"),
   qualifiedDividendsForeign: document.getElementById("builder-qualified-dividends-foreign"),
-  stcgUs: document.getElementById("builder-stcg-us"),
-  stcgForeign: document.getElementById("builder-stcg-foreign"),
-  ltcgUs: document.getElementById("builder-ltcg-us"),
-  ltcgForeign: document.getElementById("builder-ltcg-foreign"),
+  stGainUs: document.getElementById("builder-st-gain-us"),
+  stLossUs: document.getElementById("builder-st-loss-us"),
+  ltGainUs: document.getElementById("builder-lt-gain-us"),
+  ltLossUs: document.getElementById("builder-lt-loss-us"),
+  stGainForeign: document.getElementById("builder-st-gain-foreign"),
+  stLossForeign: document.getElementById("builder-st-loss-foreign"),
+  ltGainForeign: document.getElementById("builder-lt-gain-foreign"),
+  ltLossForeign: document.getElementById("builder-lt-loss-foreign"),
   otherUs: document.getElementById("builder-other-us"),
   foreignPassiveOther: document.getElementById("builder-foreign-passive-other"),
   foreignGeneralIncome: document.getElementById("builder-foreign-general-income"),
@@ -401,10 +405,14 @@ const DEFAULT_BUILDER_INPUTS = {
   dividendsForeign: 24036,
   qualifiedDividendsUs: 0,
   qualifiedDividendsForeign: 24036,
-  stcgUs: 0,
-  stcgForeign: 0,
-  ltcgUs: 0,
-  ltcgForeign: 741452,
+  stGainUs: 0,
+  stLossUs: 0,
+  ltGainUs: 0,
+  ltLossUs: 0,
+  stGainForeign: 0,
+  stLossForeign: 0,
+  ltGainForeign: 741452,
+  ltLossForeign: 0,
   otherUs: 0,
   foreignPassiveOther: 75449,
   foreignGeneralIncome: 0,
@@ -588,10 +596,14 @@ function sanitizeBuilderInputs(values) {
     dividendsForeign: Math.max(0, Number(values.dividendsForeign) || 0),
     qualifiedDividendsUs: Math.max(0, Number(values.qualifiedDividendsUs) || 0),
     qualifiedDividendsForeign: Math.max(0, Number(values.qualifiedDividendsForeign) || 0),
-    stcgUs: Number(values.stcgUs) || 0,
-    stcgForeign: Number(values.stcgForeign) || 0,
-    ltcgUs: Number(values.ltcgUs) || 0,
-    ltcgForeign: Number(values.ltcgForeign) || 0,
+    stGainUs: Math.max(0, Number(values.stGainUs) || 0),
+    stLossUs: Math.max(0, Number(values.stLossUs) || 0),
+    ltGainUs: Math.max(0, Number(values.ltGainUs) || 0),
+    ltLossUs: Math.max(0, Number(values.ltLossUs) || 0),
+    stGainForeign: Math.max(0, Number(values.stGainForeign) || 0),
+    stLossForeign: Math.max(0, Number(values.stLossForeign) || 0),
+    ltGainForeign: Math.max(0, Number(values.ltGainForeign) || 0),
+    ltLossForeign: Math.max(0, Number(values.ltLossForeign) || 0),
     otherUs: Number(values.otherUs) || 0,
     foreignPassiveOther: Math.max(0, Number(values.foreignPassiveOther) || 0),
     foreignGeneralIncome: Math.max(0, Number(values.foreignGeneralIncome) || 0),
@@ -624,6 +636,10 @@ function sanitizeBuilderInputs(values) {
 
   safe.qualifiedDividendsUs = clamp(safe.qualifiedDividendsUs, 0, safe.dividendsUs);
   safe.qualifiedDividendsForeign = clamp(safe.qualifiedDividendsForeign, 0, safe.dividendsForeign);
+  safe.stcgUs = safe.stGainUs - safe.stLossUs;
+  safe.stcgForeign = safe.stGainForeign - safe.stLossForeign;
+  safe.ltcgUs = safe.ltGainUs - safe.ltLossUs;
+  safe.ltcgForeign = safe.ltGainForeign - safe.ltLossForeign;
   return safe;
 }
 
@@ -1977,10 +1993,14 @@ function readBuilderInputs() {
     dividendsForeign: parseNumber(builderInputs.dividendsForeign),
     qualifiedDividendsUs: parseNumber(builderInputs.qualifiedDividendsUs),
     qualifiedDividendsForeign: parseNumber(builderInputs.qualifiedDividendsForeign),
-    stcgUs: parseNumber(builderInputs.stcgUs),
-    stcgForeign: parseNumber(builderInputs.stcgForeign),
-    ltcgUs: parseNumber(builderInputs.ltcgUs),
-    ltcgForeign: parseNumber(builderInputs.ltcgForeign),
+    stGainUs: parseNumber(builderInputs.stGainUs),
+    stLossUs: parseNumber(builderInputs.stLossUs),
+    ltGainUs: parseNumber(builderInputs.ltGainUs),
+    ltLossUs: parseNumber(builderInputs.ltLossUs),
+    stGainForeign: parseNumber(builderInputs.stGainForeign),
+    stLossForeign: parseNumber(builderInputs.stLossForeign),
+    ltGainForeign: parseNumber(builderInputs.ltGainForeign),
+    ltLossForeign: parseNumber(builderInputs.ltLossForeign),
     otherUs: parseNumber(builderInputs.otherUs),
     foreignPassiveOther: parseNumber(builderInputs.foreignPassiveOther),
     foreignGeneralIncome: parseNumber(builderInputs.foreignGeneralIncome),
@@ -2051,32 +2071,129 @@ function getForm1116AdjustedTaxableIncome(result) {
   );
 }
 
+function getBuilderWorldwideGrossIncome(builder) {
+  return Math.max(0, builder.wagesUs)
+    + Math.max(0, builder.otherUs)
+    + builder.interestUs
+    + builder.dividendsUs
+    + builder.interestForeign
+    + builder.dividendsForeign
+    + Math.max(0, builder.foreignPassiveOther)
+    + Math.max(0, builder.foreignGeneralIncome)
+    + builder.stGainUs
+    + builder.ltGainUs
+    + builder.stGainForeign
+    + builder.ltGainForeign;
+}
+
+function getBuilderPassiveGrossIncome(builder) {
+  return builder.interestForeign
+    + builder.dividendsForeign
+    + Math.max(0, builder.foreignPassiveOther)
+    + builder.stGainForeign
+    + builder.ltGainForeign;
+}
+
+function prorateReductionByBucket(buckets, reductionAmount) {
+  const total = Object.values(buckets).reduce((sum, value) => sum + Math.max(0, value), 0);
+  if (total <= 0 || reductionAmount <= 0) {
+    return Object.fromEntries(Object.keys(buckets).map((key) => [key, 0]));
+  }
+
+  const reductions = {};
+  for (const [key, value] of Object.entries(buckets)) {
+    reductions[key] = reductionAmount * (Math.max(0, value) / total);
+  }
+  return reductions;
+}
+
+function computePassive1116CapitalSupport(builder, result) {
+  const totalQualified = builder.qualifiedDividendsUs + builder.qualifiedDividendsForeign;
+  const totalPositiveLongTerm = Math.max(0, builder.ltcgUs) + Math.max(0, builder.ltcgForeign);
+  const allocation = getPreferentialBucketAllocation(totalQualified, totalPositiveLongTerm, result.ltcgBreakdown);
+
+  const foreignLongTermNetGain = Math.max(0, builder.ltcgForeign);
+  const foreignLongTermShare = totalPositiveLongTerm > 0 ? foreignLongTermNetGain / totalPositiveLongTerm : 0;
+  const foreignQualifiedShare = totalQualified > 0 ? builder.qualifiedDividendsForeign / totalQualified : 0;
+
+  let foreignLt0 = allocation.lt0 * foreignLongTermShare;
+  let foreignLt15 = allocation.lt15 * foreignLongTermShare;
+  let foreignLt20 = allocation.lt20 * foreignLongTermShare;
+  const foreignQd0 = allocation.qd0 * foreignQualifiedShare;
+  const foreignQd15 = allocation.qd15 * foreignQualifiedShare;
+  const foreignQd20 = allocation.qd20 * foreignQualifiedShare;
+
+  const foreignShortTermNetGain = Math.max(0, builder.stcgForeign);
+  const foreignCapitalGainNetIncome = Math.max(0, builder.stcgForeign + builder.ltcgForeign);
+  const worldwideCapitalGainNetIncome = Math.max(0, builder.stcgUs + builder.stcgForeign + builder.ltcgUs + builder.ltcgForeign);
+  const usCapitalLossAdjustment = Math.max(0, foreignCapitalGainNetIncome - worldwideCapitalGainNetIncome);
+
+  const capBuckets = {
+    st: foreignShortTermNetGain,
+    lt0: foreignLt0,
+    lt15: foreignLt15,
+    lt20: foreignLt20
+  };
+  const usLossReductions = prorateReductionByBucket(capBuckets, usCapitalLossAdjustment);
+  const remainingSt = Math.max(0, foreignShortTermNetGain - usLossReductions.st);
+  foreignLt0 = Math.max(0, foreignLt0 - usLossReductions.lt0);
+  foreignLt15 = Math.max(0, foreignLt15 - usLossReductions.lt15);
+  foreignLt20 = Math.max(0, foreignLt20 - usLossReductions.lt20);
+
+  const usNetLongTermLoss = Math.max(0, builder.ltLossUs - builder.ltGainUs);
+  const usCapitalLossAppliedToLongTerm = usLossReductions.lt0 + usLossReductions.lt15 + usLossReductions.lt20;
+  const usLongTermLossAdjustment = Math.max(0, usNetLongTermLoss - usCapitalLossAppliedToLongTerm);
+  const longTermBuckets = { lt0: foreignLt0, lt15: foreignLt15, lt20: foreignLt20 };
+  const unadjustedLongTermAllocations = prorateReductionByBucket(longTermBuckets, usLongTermLossAdjustment);
+
+  const line1aLongTerm =
+    Math.max(0, foreignLt0 - unadjustedLongTermAllocations.lt0) * 0 + unadjustedLongTermAllocations.lt0 +
+    Math.max(0, foreignLt15 - unadjustedLongTermAllocations.lt15) * FTC_LINE1A_15_INCLUDE + unadjustedLongTermAllocations.lt15 +
+    Math.max(0, foreignLt20 - unadjustedLongTermAllocations.lt20) * FTC_LINE1A_20_INCLUDE + unadjustedLongTermAllocations.lt20;
+
+  const adjustedForeignQualifiedDividends = foreignQd15 * FTC_LINE1A_15_INCLUDE + foreignQd20 * FTC_LINE1A_20_INCLUDE;
+  const passiveForeignNonqualifiedDividends = Math.max(0, builder.dividendsForeign - builder.qualifiedDividendsForeign);
+
+  const foreignShortTermLoss = Math.max(0, builder.stLossForeign - builder.stGainForeign);
+  const availableUsShortTermGain = Math.max(0, builder.stcgUs);
+  const offsetUsShortTerm = Math.min(foreignShortTermLoss, availableUsShortTermGain);
+  let remainingShortTermLoss = Math.max(0, foreignShortTermLoss - offsetUsShortTerm);
+  const offset20 = Math.min(remainingShortTermLoss, Math.max(0, allocation.lt20));
+  remainingShortTermLoss -= offset20;
+  const offset15 = Math.min(remainingShortTermLoss, Math.max(0, allocation.lt15));
+  remainingShortTermLoss -= offset15;
+  const offset0 = Math.min(remainingShortTermLoss, Math.max(0, allocation.lt0));
+  const adjustedForeignCapitalLoss = offsetUsShortTerm + offset20 * FTC_LINE1A_20_INCLUDE + offset15 * FTC_LINE1A_15_INCLUDE + offset0 * 0;
+
+  return {
+    totalQualified,
+    totalPositiveLongTerm,
+    allocation,
+    foreignQd0,
+    foreignQd15,
+    foreignQd20,
+    foreignLt0,
+    foreignLt15,
+    foreignLt20,
+    foreignShortTermNetGain,
+    remainingSt,
+    usCapitalLossAdjustment,
+    usLongTermLossAdjustment,
+    adjustedForeignQualifiedDividends,
+    adjustedForeignLongTerm: line1aLongTerm,
+    passiveForeignNonqualifiedDividends,
+    adjustedForeignCapitalLoss,
+    line1aCapitalPortion: remainingSt + line1aLongTerm
+  };
+}
+
 function buildBuilderBridgeRows(builder, result) {
   const passiveForm = computeBuilderForm1116(builder, result, "passive");
   const generalForm = computeBuilderForm1116(builder, result, "general");
   const foreignNetCapital = builder.stcgForeign + builder.ltcgForeign;
-  const passiveForeignGross = grossPositive(
-    builder.stcgForeign,
-    builder.ltcgForeign,
-    builder.dividendsForeign,
-    builder.interestForeign,
-    builder.foreignPassiveOther
-  );
-  const generalForeignGross = grossPositive(builder.foreignGeneralIncome);
-  const worldwideGross = grossPositive(
-    builder.wagesUs,
-    builder.interestUs,
-    builder.interestForeign,
-    builder.dividendsUs,
-    builder.dividendsForeign,
-    builder.stcgUs,
-    builder.stcgForeign,
-    builder.ltcgUs,
-    builder.ltcgForeign,
-    builder.otherUs,
-    builder.foreignPassiveOther,
-    builder.foreignGeneralIncome
-  );
+  const passiveForeignGross = getBuilderPassiveGrossIncome(builder);
+  const generalForeignGross = Math.max(0, builder.foreignGeneralIncome);
+  const worldwideGross = getBuilderWorldwideGrossIncome(builder);
 
   return [
     ["Deduction used on Form 1040", toMoney(result.deductionUsed), `Using ${result.deductionType} deduction in this builder run.`],
@@ -2086,10 +2203,12 @@ function buildBuilderBridgeRows(builder, result) {
     ["Qualified dividends used on return", toMoney(builder.qualifiedDividendsUs + builder.qualifiedDividendsForeign), "US qualified dividends + foreign qualified dividends"],
     ["Net short-term gain / loss used on return", toMoney(builder.stcgUs + builder.stcgForeign), "US short-term + foreign short-term"],
     ["Net long-term gain / loss used on return", toMoney(builder.ltcgUs + builder.ltcgForeign), "US long-term + foreign long-term"],
+    ["Gross short-term sale profits used for Form 1116", toMoney(builder.stGainUs + builder.stGainForeign), "US short-term profits + foreign short-term profits before subtracting losses"],
+    ["Gross long-term sale profits used for Form 1116", toMoney(builder.ltGainUs + builder.ltGainForeign), "US long-term profits + foreign long-term profits before subtracting losses"],
     ["Net foreign capital gain / loss entered", toMoney(foreignNetCapital), "Foreign short-term + foreign long-term. Negative values reduce Form 1040 capital-gain income."],
-    ["Foreign passive gross income for Form 1116 ratio", toMoney(passiveForeignGross), "Positive foreign passive items only: gains, dividends, interest, retirement / annuity"],
+    ["Foreign passive gross income for Form 1116 ratio", toMoney(passiveForeignGross), "Foreign passive gross income before capital losses: gains, dividends, interest, retirement / annuity"],
     ["Foreign general gross income for Form 1116 ratio", toMoney(generalForeignGross), "Positive foreign earned / business income only"],
-    ["Worldwide gross income for Form 1116 ratio", toMoney(worldwideGross), "Positive gross income from all modeled sources except excluded foreign income / refund"],
+    ["Worldwide gross income for Form 1116 ratio", toMoney(worldwideGross), "Gross income from all modeled sources before capital losses. Excluded foreign income / refund is not included."],
     ["Excluded foreign income / refund kept out of return math", toMoney(builder.foreignExcludedIncome), "Tracked for context only. Not included in Form 1040 or either Form 1116 basket in this builder."],
     ["Foreign capital loss adjustment used in Form 1116", toMoney(passiveForm.line5), "If foreign STCG or LTCG is negative, the adjusted loss shows up here rather than on Form 1116 line 1a."],
     ["Total current-year passive foreign taxes", toMoney(builder.ftaxPassiveGains + builder.ftaxPassiveDividends + builder.ftaxPassiveInterest + builder.ftaxPassiveOther), "Foreign taxes entered against passive income components"],
@@ -2103,59 +2222,16 @@ function buildBuilderBridgeRows(builder, result) {
 
 function computeBuilderForm1116(builder, result, category) {
   const isPassive = category === "passive";
-  const passiveGrossForRatio = grossPositive(
-    builder.stcgForeign,
-    builder.ltcgForeign,
-    builder.dividendsForeign,
-    builder.interestForeign,
-    builder.foreignPassiveOther
-  );
-  const generalGrossForRatio = grossPositive(builder.foreignGeneralIncome);
-  const worldwideGross = grossPositive(
-    builder.wagesUs,
-    builder.interestUs,
-    builder.interestForeign,
-    builder.dividendsUs,
-    builder.dividendsForeign,
-    builder.stcgUs,
-    builder.stcgForeign,
-    builder.ltcgUs,
-    builder.ltcgForeign,
-    builder.otherUs,
-    builder.foreignPassiveOther,
-    builder.foreignGeneralIncome
-  );
+  const passiveGrossForRatio = getBuilderPassiveGrossIncome(builder);
+  const generalGrossForRatio = Math.max(0, builder.foreignGeneralIncome);
+  const worldwideGross = getBuilderWorldwideGrossIncome(builder);
   const ratioGross = isPassive ? passiveGrossForRatio : generalGrossForRatio;
   const ratio = worldwideGross > 0 ? ratioGross / worldwideGross : 0;
 
-  const totalQualified = builder.qualifiedDividendsUs + builder.qualifiedDividendsForeign;
-  const totalPositiveLongTerm = Math.max(0, builder.ltcgUs) + Math.max(0, builder.ltcgForeign);
-  const allocation = getPreferentialBucketAllocation(totalQualified, totalPositiveLongTerm, result.ltcgBreakdown);
-
-  const foreignLongTermShare = totalPositiveLongTerm > 0 ? Math.max(0, builder.ltcgForeign) / totalPositiveLongTerm : 0;
-  const foreignQualifiedShare = totalQualified > 0 ? builder.qualifiedDividendsForeign / totalQualified : 0;
-
-  const foreignLt15 = allocation.lt15 * foreignLongTermShare;
-  const foreignLt20 = allocation.lt20 * foreignLongTermShare;
-  const foreignQd15 = allocation.qd15 * foreignQualifiedShare;
-  const foreignQd20 = allocation.qd20 * foreignQualifiedShare;
-
-  const adjustedForeignLongTerm = foreignLt15 * FTC_LINE1A_15_INCLUDE + foreignLt20 * FTC_LINE1A_20_INCLUDE;
-  const adjustedForeignQualifiedDividends = foreignQd15 * FTC_LINE1A_15_INCLUDE + foreignQd20 * FTC_LINE1A_20_INCLUDE;
-
-  const passiveForeignNonqualifiedDividends = Math.max(0, builder.dividendsForeign - builder.qualifiedDividendsForeign);
-  const passiveForeignPositiveSt = Math.max(0, builder.stcgForeign);
-  const lossAdjustmentFactor = result.ltcgBreakdown.atTwenty > 0
-    ? FTC_LINE1A_20_INCLUDE
-    : result.ltcgBreakdown.atFifteen > 0
-      ? FTC_LINE1A_15_INCLUDE
-      : 0;
-  const adjustedForeignCapitalLoss = isPassive
-    ? (Math.abs(Math.min(0, builder.stcgForeign)) + Math.abs(Math.min(0, builder.ltcgForeign))) * lossAdjustmentFactor
-    : 0;
+  const passiveCapital = computePassive1116CapitalSupport(builder, result);
 
   const line1a = isPassive
-    ? passiveForeignPositiveSt + adjustedForeignLongTerm + adjustedForeignQualifiedDividends + passiveForeignNonqualifiedDividends + builder.interestForeign + builder.foreignPassiveOther
+    ? passiveCapital.line1aCapitalPortion + passiveCapital.adjustedForeignQualifiedDividends + passiveCapital.passiveForeignNonqualifiedDividends + builder.interestForeign + builder.foreignPassiveOther
     : builder.foreignGeneralIncome;
   const line2 = isPassive ? builder.directPassiveDeductions : builder.directGeneralDeductions;
   const line3a = result.deductionType === "itemized"
@@ -2169,7 +2245,7 @@ function computeBuilderForm1116(builder, result, category) {
   const line3g = line3c * line3f;
   const line4a = result.deductionType === "itemized" ? builder.mortgageInterest * ratio : 0;
   const line4b = 0;
-  const line5 = adjustedForeignCapitalLoss;
+  const line5 = isPassive ? passiveCapital.adjustedForeignCapitalLoss : 0;
   const line6 = line2 + line3g + line4a + line4b + line5;
   const line7 = Math.max(0, line1a - line6);
   const line8 = isPassive
@@ -2226,15 +2302,19 @@ function computeBuilderForm1116(builder, result, category) {
     line23,
     line24,
     support: {
-      adjustedForeignLongTerm,
-      adjustedForeignQualifiedDividends,
-      adjustedForeignCapitalLoss,
-      passiveForeignPositiveSt,
-      passiveForeignNonqualifiedDividends,
-      foreignLt15,
-      foreignLt20,
-      foreignQd15,
-      foreignQd20
+      adjustedForeignLongTerm: passiveCapital.adjustedForeignLongTerm,
+      adjustedForeignQualifiedDividends: passiveCapital.adjustedForeignQualifiedDividends,
+      adjustedForeignCapitalLoss: passiveCapital.adjustedForeignCapitalLoss,
+      passiveForeignPositiveSt: passiveCapital.remainingSt,
+      passiveForeignNonqualifiedDividends: passiveCapital.passiveForeignNonqualifiedDividends,
+      foreignLt0: passiveCapital.foreignLt0,
+      foreignLt15: passiveCapital.foreignLt15,
+      foreignLt20: passiveCapital.foreignLt20,
+      foreignQd0: passiveCapital.foreignQd0,
+      foreignQd15: passiveCapital.foreignQd15,
+      foreignQd20: passiveCapital.foreignQd20,
+      worldwideGross,
+      ratioGross
     }
   };
 }
@@ -2292,7 +2372,7 @@ function getBuilder1116Rows(builder, result, category) {
 
   return [
     [`Form 1116 ${label}, line 1a`, toMoney(data.line1a), category === "passive"
-      ? "Foreign passive income after capital-gain / qualified-dividend adjustment: foreign ST gain + adjusted foreign LT gain + adjusted foreign qualified dividends + foreign nonqualified dividends + foreign interest + foreign retirement / annuity."
+      ? "Foreign passive income after the Form 1116 qualified-dividend and capital-gain adjustments. Gross gains and losses are entered separately, then rolled into the IRS adjustment rules."
       : "Foreign earned / business income entered in the general basket."],
     [`Form 1116 ${label}, line 2`, toMoney(data.line2), "Expenses directly tied to this basket, from the builder inputs."],
     [`Form 1116 ${label}, line 3a`, toMoney(data.line3a), result.deductionType === "itemized"
@@ -2300,16 +2380,16 @@ function getBuilder1116Rows(builder, result, category) {
       : "Standard deduction used because the builder run did not itemize."],
     [`Form 1116 ${label}, line 3c`, toMoney(data.line3c), "Line 3a minus line 3b. Line 3b is currently assumed to be 0."],
     [`Form 1116 ${label}, line 3d`, toMoney(data.line3d), category === "passive"
-      ? "Positive foreign passive gross income for the ratio: foreign gains, dividends, interest, and retirement / annuity only."
+      ? "Gross foreign passive income before losses: foreign interest, dividends, retirement / annuity income, and gross capital gains before subtracting capital losses."
       : "Positive foreign general gross income for the ratio."],
-    [`Form 1116 ${label}, line 3e`, toMoney(data.line3e), "Positive gross income from all modeled sources except excluded foreign income / refund."],
+    [`Form 1116 ${label}, line 3e`, toMoney(data.line3e), "Gross income from all modeled sources before capital losses. Excluded foreign income / refund stays outside this denominator."],
     [`Form 1116 ${label}, line 3f`, data.line3f.toFixed(4), ratioNote],
     [`Form 1116 ${label}, line 3g`, toMoney(data.line3g), "Apportioned share of the unallocated deduction pool."],
     [`Form 1116 ${label}, line 4a`, toMoney(data.line4a), result.deductionType === "itemized"
-      ? "Mortgage interest apportioned by the same gross-income ratio."
+      ? "Mortgage interest apportioned with the Form 1116 gross-income method using lines 3d and 3e."
       : "0 because this builder run is using the standard deduction instead of itemizing."],
     [`Form 1116 ${label}, line 5`, toMoney(data.line5), category === "passive"
-      ? "Adjusted foreign capital loss based on the entered foreign capital losses and the current preferential-rate buckets."
+      ? "Foreign capital-loss adjustment. Short-term losses are ordered through the available capital-gain rate buckets before the adjusted amount is carried to line 5."
       : "No separate general-basket capital-loss adjustment modeled."],
     [`Form 1116 ${label}, line 7`, toMoney(data.line7), "Net foreign-source taxable income in this basket before page 2 limits."],
     [`Form 1116 ${label}, line 8`, toMoney(data.line8), "Current-year foreign taxes entered for this basket."],
@@ -2333,14 +2413,15 @@ function renderBuilderAssumptions() {
     "This builder uses 2025 MFJ line structure for Form 1040, Form 6251, Form 8960, and Form 1116.",
     "Excluded foreign income / refund is tracked for context but kept out of Form 1040 income and both Form 1116 baskets.",
     "Qualified dividends are the dividend amounts that use the lower capital-gain tax rates.",
+    "Capital activity now uses separate sale-profit and sale-loss inputs so Form 1116 lines 3d and 3e can be built from gross gains before losses rather than net capital gain alone.",
     "When foreign qualified dividends and foreign long-term gains share the lower-rate buckets, this builder allocates the 0%, 15%, and 20% buckets to qualified dividends first and then to long-term gains.",
-    "If the builder run itemizes, Form 1116 line 3a is modeled as SALT plus other itemized deductions and Form 1116 line 4a is modeled as mortgage interest apportioned by basket gross-income ratio.",
+    "If the builder run itemizes, Form 1116 line 3a is modeled as SALT plus other itemized deductions and Form 1116 line 4a is modeled with the Form 1116 gross-income method using lines 3d and 3e.",
     "If the builder run uses the standard deduction, Form 1116 line 3a uses the standard deduction and Form 1116 line 4a is set to 0.",
-    "Mortgage interest and SALT allocation for Form 1116 is still an allocation model. If your preparer uses a more specific workpaper split, enter that later in the dedicated basket-expense fields.",
+    "Form 1116 still uses one aggregate passive basket in this builder. If you need country-by-country page 1 columns, the next step is to add country-level passive inputs rather than one aggregate passive basket.",
     "Form 1116 line 2 uses only the basket-specific direct-expense inputs on this tab.",
     "Form 8960 uses investment expenses as the offset against investment income.",
     "Form 6251 uses the AMT foreign tax credit input directly. If that field is blank or low, AMT will usually be overstated.",
-    "The regular FTC used on Form 1040 still uses the current proportional limitation model in this app."
+    "The regular FTC used on Form 1040 comes from the builder's Form 1116 line 24 totals, so any remaining Form 1116 simplification will still flow into Form 1040 line 20."
   ];
   builderAssumptions.innerHTML = assumptions.map((item) => `<li>${item}</li>`).join("");
 }
@@ -2350,13 +2431,7 @@ function updateBuilderMetrics(builder, result) {
 
   const usIncome = builder.wagesUs + builder.interestUs + builder.dividendsUs + builder.stcgUs + builder.ltcgUs + builder.otherUs;
   const foreignPassiveNet = builder.interestForeign + builder.dividendsForeign + builder.stcgForeign + builder.ltcgForeign + builder.foreignPassiveOther;
-  const foreignPassiveGross = grossPositive(
-    builder.interestForeign,
-    builder.dividendsForeign,
-    builder.stcgForeign,
-    builder.ltcgForeign,
-    builder.foreignPassiveOther
-  );
+  const foreignPassiveGross = getBuilderPassiveGrossIncome(builder);
   const foreignGeneral = builder.foreignGeneralIncome;
   const deductions = builder.salt + builder.mortgageInterest + builder.otherItemized;
 

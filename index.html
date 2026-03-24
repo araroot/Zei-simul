@@ -388,8 +388,10 @@
                     <label class="builder-field"><span class="field-title">Interest</span><span class="field-help">US bank or bond interest.</span><input id="builder-interest-us" type="number" step="1" /></label>
                     <label class="builder-field"><span class="field-title">Dividends</span><span class="field-help">Total US dividends before the qualified split.</span><input id="builder-dividends-us" type="number" step="1" /></label>
                     <label class="builder-field"><span class="field-title">Dividends taxed at lower rates</span><span class="field-help">Qualified part of US dividends.</span><input id="builder-qualified-dividends-us" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">Short-term gains / losses</span><span class="field-help">US short-term capital gains or losses.</span><input id="builder-stcg-us" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">Long-term gains / losses</span><span class="field-help">US long-term capital gains or losses.</span><input id="builder-ltcg-us" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Short-term sale profits</span><span class="field-help">US short-term capital gains before subtracting short-term losses.</span><input id="builder-st-gain-us" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Short-term sale losses</span><span class="field-help">US short-term capital losses.</span><input id="builder-st-loss-us" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Long-term sale profits</span><span class="field-help">US long-term capital gains before subtracting long-term losses.</span><input id="builder-lt-gain-us" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Long-term sale losses</span><span class="field-help">US long-term capital losses.</span><input id="builder-lt-loss-us" type="number" step="1" /></label>
                     <label class="builder-field"><span class="field-title">Other ordinary income</span><span class="field-help">US ordinary income not already captured above.</span><input id="builder-other-us" type="number" step="1" /></label>
                   </div>
                 </section>
@@ -403,8 +405,10 @@
                     <label class="builder-field"><span class="field-title">Interest</span><span class="field-help">Foreign-source interest income.</span><input id="builder-interest-foreign" type="number" step="1" /></label>
                     <label class="builder-field"><span class="field-title">Dividends</span><span class="field-help">Total foreign dividends before the qualified split.</span><input id="builder-dividends-foreign" type="number" step="1" /></label>
                     <label class="builder-field"><span class="field-title">Dividends taxed at lower rates</span><span class="field-help">Qualified part of foreign dividends.</span><input id="builder-qualified-dividends-foreign" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">Short-term gains / losses</span><span class="field-help">Foreign short-term capital gains or losses.</span><input id="builder-stcg-foreign" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">Long-term gains / losses</span><span class="field-help">Foreign long-term capital gains or losses.</span><input id="builder-ltcg-foreign" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Short-term sale profits</span><span class="field-help">Foreign short-term capital gains before subtracting short-term losses.</span><input id="builder-st-gain-foreign" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Short-term sale losses</span><span class="field-help">Foreign short-term capital losses.</span><input id="builder-st-loss-foreign" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Long-term sale profits</span><span class="field-help">Foreign long-term capital gains before subtracting long-term losses.</span><input id="builder-lt-gain-foreign" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Long-term sale losses</span><span class="field-help">Foreign long-term capital losses.</span><input id="builder-lt-loss-foreign" type="number" step="1" /></label>
                     <label class="builder-field"><span class="field-title">Retirement / annuity / EPF income</span><span class="field-help">Foreign passive retirement-type payout income.</span><input id="builder-foreign-passive-other" type="number" step="1" /></label>
                     <label class="builder-field"><span class="field-title">Foreign taxes on gains</span><span class="field-help">Foreign taxes paid or accrued on foreign gains.</span><input id="builder-ftax-passive-gains" type="number" step="1" /></label>
                     <label class="builder-field"><span class="field-title">Foreign taxes on dividends</span><span class="field-help">Foreign taxes paid or accrued on foreign dividends.</span><input id="builder-ftax-passive-dividends" type="number" step="1" /></label>
@@ -586,6 +590,6 @@
     </div>
 
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="./app.js?v=20260324m"></script>
+    <script src="./app.js?v=20260324n"></script>
   </body>
 </html>
