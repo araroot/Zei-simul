@@ -102,6 +102,7 @@
                 <label class="field-inline"><span>Dividends taxed at lower rates (USD, blank = US-source)</span><input id="sum-qualified-dividends" type="number" step="1" /></label>
                 <label class="field-inline"><span>Interest (USD)</span><input id="sum-interest" type="number" step="1" /></label>
                 <label class="field-inline"><span>Other ordinary income (USD)</span><input id="sum-other" type="number" step="1" /></label>
+                <label class="field-inline"><span>Known Form 1040 line 16 tax (optional)</span><input id="sum-override-line16" type="number" step="1" /></label>
                 <label class="field-inline"><span>Expenses tied to investing (USD)</span><input id="sum-investment-expenses" type="number" step="1" /></label>
                 <label class="field-inline"><span>Itemized taxes / SALT (USD)</span><input id="sum-itemized-taxes" type="number" step="1" /></label>
                 <label class="field-inline"><span>Itemized interest (USD)</span><input id="sum-itemized-interest" type="number" step="1" /></label>
@@ -118,6 +119,7 @@
                 <label class="field-inline"><span>NIIT threshold MFJ (USD)</span><input id="sum-niit-threshold" type="number" step="1" /></label>
                 <label class="field-inline"><span>Capital loss deduction cap (USD)</span><input id="sum-caploss-cap" type="number" step="1" /></label>
                 <label class="field-inline"><span>Tax-free bond interest that counts for AMT (USD)</span><input id="sum-amt-bond-interest" type="number" step="1" /></label>
+                <label class="field-inline"><span>Known Form 6251 line 7 tax (optional)</span><input id="sum-override-amt-line7" type="number" step="1" /></label>
                 <label class="field-inline"><span>Other AMT adjustments / preferences (USD)</span><input id="sum-amt-adjustments" type="number" step="1" /></label>
                 <label class="field-inline"><span>Minimum-tax foreign tax credit (USD)</span><input id="sum-amt-ftc" type="number" step="1" /></label>
                 <label class="field-inline"><span>Other taxes besides NIIT (USD)</span><input id="sum-other-taxes" type="number" step="1" /></label>
@@ -319,6 +321,6 @@
     </div>
 
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="./app.js?v=20260324k"></script>
+    <script src="./app.js?v=20260324l"></script>
   </body>
 </html>

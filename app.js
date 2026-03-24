@@ -45,34 +45,36 @@ const STCG_POINTS = [0, 20, 40, 60, 80, 100];
 const SUMMARY_SCENARIO_IDS = ["A", "B", "C", "D", "E"];
 
 const SUMMARY_BASE_SCENARIO_B = {
-  stcg: -290072,
-  ltcg: 1031155,
-  dividends: 22166,
-  qualifiedDividends: 2479,
-  interest: 22849,
-  other: 101597,
+  stcg: 0,
+  ltcg: 741452,
+  dividends: 24036,
+  qualifiedDividends: 24036,
+  interest: 22672,
+  other: 75449,
+  regularTaxOverride: 127709,
   investmentExpenses: 6467,
   itemizedTaxes: 10000,
   itemizedInterest: 26878,
   itemizedOther: 0,
   usStcg: 0,
-  usLtcg: 201184,
-  usDividends: 2479,
-  usInterest: 16925,
-  usOther: 2982,
-  foreignTaxes: 143430,
+  usLtcg: 0,
+  usDividends: 0,
+  usInterest: 0,
+  usOther: 0,
+  foreignTaxes: 124000,
   ftcCarryover: 0,
   otherCredits: 0,
   stdDeduction: 31500,
   niitThreshold: 250000,
   capLossCap: 3000,
   amtBondInterest: 0,
+  amtLine7Override: 107688,
   amtAdjustments: 0,
-  amtFtc: 0,
+  amtFtc: 81143,
   otherTaxes: 0,
   withholding: 0,
   otherPayments: 0,
-  penalty: 0
+  penalty: 2089
 };
 
 const SCENARIO_B_WORKBOOK_BREAKOUT = {
@@ -195,6 +197,7 @@ const sumInputs = {
   qualifiedDividends: document.getElementById("sum-qualified-dividends"),
   interest: document.getElementById("sum-interest"),
   other: document.getElementById("sum-other"),
+  regularTaxOverride: document.getElementById("sum-override-line16"),
   investmentExpenses: document.getElementById("sum-investment-expenses"),
   itemizedTaxes: document.getElementById("sum-itemized-taxes"),
   itemizedInterest: document.getElementById("sum-itemized-interest"),
@@ -211,6 +214,7 @@ const sumInputs = {
   niitThreshold: document.getElementById("sum-niit-threshold"),
   capLossCap: document.getElementById("sum-caploss-cap"),
   amtBondInterest: document.getElementById("sum-amt-bond-interest"),
+  amtLine7Override: document.getElementById("sum-override-amt-line7"),
   amtAdjustments: document.getElementById("sum-amt-adjustments"),
   amtFtc: document.getElementById("sum-amt-ftc"),
   otherTaxes: document.getElementById("sum-other-taxes"),
@@ -304,6 +308,8 @@ function cloneScenario(values) {
   return {
     ...values,
     qualifiedDividends: values.qualifiedDividends === null ? null : Number(values.qualifiedDividends),
+    regularTaxOverride: values.regularTaxOverride === null ? null : Number(values.regularTaxOverride),
+    amtLine7Override: values.amtLine7Override === null ? null : Number(values.amtLine7Override),
     ftcCarryover: Number(values.ftcCarryover)
   };
 }
@@ -341,6 +347,9 @@ function sanitizeSummaryScenario(s) {
   scenario.dividends = Math.max(0, scenario.dividends);
   scenario.interest = Math.max(0, scenario.interest);
   scenario.other = Math.max(0, scenario.other);
+  scenario.regularTaxOverride = scenario.regularTaxOverride === null || scenario.regularTaxOverride === "" || Number.isNaN(Number(scenario.regularTaxOverride))
+    ? null
+    : Math.max(0, Number(scenario.regularTaxOverride));
   scenario.investmentExpenses = Math.max(0, Number(scenario.investmentExpenses) || 0);
   scenario.itemizedTaxes = Math.max(0, Number(scenario.itemizedTaxes) || 0);
   scenario.itemizedInterest = Math.max(0, Number(scenario.itemizedInterest) || 0);
@@ -352,6 +361,9 @@ function sanitizeSummaryScenario(s) {
   scenario.niitThreshold = Math.max(0, scenario.niitThreshold);
   scenario.capLossCap = Math.max(0, scenario.capLossCap);
   scenario.amtBondInterest = Math.max(0, Number(scenario.amtBondInterest) || 0);
+  scenario.amtLine7Override = scenario.amtLine7Override === null || scenario.amtLine7Override === "" || Number.isNaN(Number(scenario.amtLine7Override))
+    ? null
+    : Math.max(0, Number(scenario.amtLine7Override));
   scenario.amtAdjustments = Number(scenario.amtAdjustments) || 0;
   scenario.amtFtc = Math.max(0, Number(scenario.amtFtc) || 0);
   scenario.otherTaxes = Math.max(0, Number(scenario.otherTaxes) || 0);
@@ -390,6 +402,7 @@ function buildSimulatedSummaryScenarios() {
       dividends: base.dividends + randomSignedLargeDelta(rand),
       interest: base.interest + randomSignedLargeDelta(rand),
       other: base.other + randomSignedLargeDelta(rand),
+      regularTaxOverride: null,
       investmentExpenses: Math.max(0, base.investmentExpenses + randomInt(rand, -3000, 12000)),
       itemizedTaxes: base.itemizedTaxes,
       itemizedInterest: Math.max(0, base.itemizedInterest + randomInt(rand, -15000, 15000)),
@@ -398,6 +411,7 @@ function buildSimulatedSummaryScenarios() {
       ftcCarryover: Math.max(0, base.ftcCarryover + randomInt(rand, 0, 50000)),
       otherCredits: Math.max(0, randomInt(rand, 0, 15000)),
       amtBondInterest: Math.max(0, randomInt(rand, 0, 10000)),
+      amtLine7Override: null,
       amtAdjustments: randomInt(rand, -50000, 150000),
       amtFtc: Math.max(0, randomInt(rand, 0, 50000)),
       otherTaxes: Math.max(0, randomInt(rand, 0, 10000)),
@@ -1142,7 +1156,8 @@ function calculateSummaryTax(inputs) {
 
   const ordinaryTax = calcOrdinaryTax(taxableOrdinary, ORDINARY_BRACKETS_2025);
   const ltcgBreakdown = calcLtcgTaxBreakdown(taxableOrdinary, taxablePref, LTCG_THRESHOLDS_2025);
-  const regularTax = ordinaryTax + ltcgBreakdown.tax;
+  const regularTaxComputed = ordinaryTax + ltcgBreakdown.tax;
+  const regularTax = inputs.regularTaxOverride ?? regularTaxComputed;
 
   const investmentIncomeGross = Math.max(0, capNet.ordinaryCapGain + capNet.prefCapGain + inputs.dividends + inputs.interest);
   const investmentExpensesUsed = Math.min(investmentIncomeGross, Math.max(0, inputs.investmentExpenses));
@@ -1184,7 +1199,8 @@ function calculateSummaryTax(inputs) {
   const amtTaxableOrdinary = Math.max(0, amtTaxableIncome - amtPrefIncome);
   const amtLtcgBreakdown = calcLtcgTaxBreakdown(amtTaxableOrdinary, amtPrefIncome, LTCG_THRESHOLDS_2025);
   const amtOrdinaryTax = calcAmtOrdinaryTax(amtTaxableOrdinary);
-  const tentativeMinimumTax = amtOrdinaryTax + amtLtcgBreakdown.tax;
+  const tentativeMinimumTaxComputed = amtOrdinaryTax + amtLtcgBreakdown.tax;
+  const tentativeMinimumTax = inputs.amtLine7Override ?? tentativeMinimumTaxComputed;
   const regularTaxForAmtComparison = Math.max(0, regularTax - ftcAllowed);
   const amtFtcUsed = Math.min(Math.max(0, inputs.amtFtc), tentativeMinimumTax);
   const amt = Math.max(0, tentativeMinimumTax - amtFtcUsed - regularTaxForAmtComparison);
@@ -1221,6 +1237,7 @@ function calculateSummaryTax(inputs) {
     taxablePref,
     ordinaryTax,
     ltcgBreakdown,
+    regularTaxComputed,
     regularTax,
     investmentIncomeGross,
     investmentExpensesUsed,
@@ -1248,6 +1265,7 @@ function calculateSummaryTax(inputs) {
     amtTaxableOrdinary,
     amtOrdinaryTax,
     amtLtcgBreakdown,
+    tentativeMinimumTaxComputed,
     tentativeMinimumTax,
     regularTaxForAmtComparison,
     amtFtcUsed,
@@ -1275,6 +1293,8 @@ function readSummaryInputs() {
   const qualifiedDividends = qualifiedRaw === ""
     ? usDividends
     : parseNumber(sumInputs.qualifiedDividends);
+  const regularTaxOverrideRaw = (sumInputs.regularTaxOverride?.value ?? "").trim();
+  const amtLine7OverrideRaw = (sumInputs.amtLine7Override?.value ?? "").trim();
 
   return sanitizeSummaryScenario({
     stcg: parseNumber(sumInputs.stcg),
@@ -1283,6 +1303,7 @@ function readSummaryInputs() {
     qualifiedDividends,
     interest: parseNumber(sumInputs.interest),
     other: parseNumber(sumInputs.other),
+    regularTaxOverride: regularTaxOverrideRaw === "" ? null : parseNumber(sumInputs.regularTaxOverride),
     investmentExpenses: parseNumber(sumInputs.investmentExpenses),
     itemizedTaxes: parseNumber(sumInputs.itemizedTaxes),
     itemizedInterest: parseNumber(sumInputs.itemizedInterest),
@@ -1299,6 +1320,7 @@ function readSummaryInputs() {
     niitThreshold: parseNumber(sumInputs.niitThreshold, 250000),
     capLossCap: parseNumber(sumInputs.capLossCap, 3000),
     amtBondInterest: parseNumber(sumInputs.amtBondInterest),
+    amtLine7Override: amtLine7OverrideRaw === "" ? null : parseNumber(sumInputs.amtLine7Override),
     amtAdjustments: parseNumber(sumInputs.amtAdjustments),
     amtFtc: parseNumber(sumInputs.amtFtc),
     otherTaxes: parseNumber(sumInputs.otherTaxes),
@@ -1310,6 +1332,8 @@ function readSummaryInputs() {
 
 function readSummaryDraftFromForm() {
   const qualifiedRaw = (sumInputs.qualifiedDividends?.value ?? "").trim();
+  const regularTaxOverrideRaw = (sumInputs.regularTaxOverride?.value ?? "").trim();
+  const amtLine7OverrideRaw = (sumInputs.amtLine7Override?.value ?? "").trim();
   return {
     stcg: parseNumber(sumInputs.stcg),
     ltcg: parseNumber(sumInputs.ltcg),
@@ -1317,6 +1341,7 @@ function readSummaryDraftFromForm() {
     qualifiedDividends: qualifiedRaw === "" ? null : parseNumber(sumInputs.qualifiedDividends),
     interest: parseNumber(sumInputs.interest),
     other: parseNumber(sumInputs.other),
+    regularTaxOverride: regularTaxOverrideRaw === "" ? null : parseNumber(sumInputs.regularTaxOverride),
     investmentExpenses: parseNumber(sumInputs.investmentExpenses),
     itemizedTaxes: parseNumber(sumInputs.itemizedTaxes),
     itemizedInterest: parseNumber(sumInputs.itemizedInterest),
@@ -1333,6 +1358,7 @@ function readSummaryDraftFromForm() {
     niitThreshold: parseNumber(sumInputs.niitThreshold, 250000),
     capLossCap: parseNumber(sumInputs.capLossCap, 3000),
     amtBondInterest: parseNumber(sumInputs.amtBondInterest),
+    amtLine7Override: amtLine7OverrideRaw === "" ? null : parseNumber(sumInputs.amtLine7Override),
     amtAdjustments: parseNumber(sumInputs.amtAdjustments),
     amtFtc: parseNumber(sumInputs.amtFtc),
     otherTaxes: parseNumber(sumInputs.otherTaxes),
@@ -1349,6 +1375,7 @@ function writeSummaryScenarioToForm(values) {
   sumInputs.qualifiedDividends.value = values.qualifiedDividends === null ? "" : String(Math.round(values.qualifiedDividends));
   sumInputs.interest.value = String(Math.round(values.interest));
   sumInputs.other.value = String(Math.round(values.other));
+  sumInputs.regularTaxOverride.value = values.regularTaxOverride === null ? "" : String(Math.round(values.regularTaxOverride));
   sumInputs.investmentExpenses.value = String(Math.round(values.investmentExpenses));
   sumInputs.itemizedTaxes.value = String(Math.round(values.itemizedTaxes));
   sumInputs.itemizedInterest.value = String(Math.round(values.itemizedInterest));
@@ -1365,6 +1392,7 @@ function writeSummaryScenarioToForm(values) {
   sumInputs.niitThreshold.value = String(Math.round(values.niitThreshold));
   sumInputs.capLossCap.value = String(Math.round(values.capLossCap));
   sumInputs.amtBondInterest.value = String(Math.round(values.amtBondInterest));
+  sumInputs.amtLine7Override.value = values.amtLine7Override === null ? "" : String(Math.round(values.amtLine7Override));
   sumInputs.amtAdjustments.value = String(Math.round(values.amtAdjustments));
   sumInputs.amtFtc.value = String(Math.round(values.amtFtc));
   sumInputs.otherTaxes.value = String(Math.round(values.otherTaxes));
@@ -1474,7 +1502,7 @@ function renderSummaryOutput(result) {
         ["Standard deduction", toMoney(result.stdDeduction), "MFJ input"],
         ["Larger of itemized or standard deduction", toMoney(result.deductionUsed), `Using ${result.deductionType} deduction for regular tax`],
         ["Taxable income", toMoney(result.taxableIncome), "AGI - deduction used"],
-        ["Tax before AMT and APTC", toMoney(result.regularTax), "Regular 2025 tax with LTCG / qualified dividend stacking"],
+        ["Tax before AMT and APTC", toMoney(result.regularTax), result.inputs.regularTaxOverride === null ? "Regular 2025 tax with LTCG / qualified dividend stacking" : `Using known Form 1040 line 16 override. Computed amount was ${toMoney(result.regularTaxComputed)}`],
         ["Alternative minimum tax", toMoney(result.amt), `Tentative minimum tax ${toMoney(result.tentativeMinimumTax)} less regular tax for AMT comparison ${toMoney(result.regularTaxForAmtComparison)} and AMT FTC ${toMoney(result.amtFtcUsed)}`],
         ["Tax before credits", toMoney(result.taxBeforeCredits), "Regular tax + AMT"],
         ["Ordinary income tax bracket", `${(result.ordinaryMarginalRate * 100).toFixed(1)}%`, "Based on taxable ordinary income"]
@@ -1585,7 +1613,7 @@ function render1040Preview(result) {
     ["Form 1040, line 13. Qualified business income deduction", toMoney(0), "Not modeled"],
     ["Form 1040, line 14. Add lines 12 and 13", toMoney(result.deductionUsed), "Total deductions"],
     ["Form 1040, line 15. Taxable income", toMoney(result.taxableIncome), "AGI minus total deductions"],
-    ["Form 1040, line 16. Tax", toMoney(result.regularTax), "Regular tax before Schedule 2 taxes and credits"],
+    ["Form 1040, line 16. Tax", toMoney(result.regularTax), result.inputs.regularTaxOverride === null ? "Regular tax before Schedule 2 taxes and credits" : `Using known line 16 override. Computed amount was ${toMoney(result.regularTaxComputed)}`],
     ["Schedule 2 (Form 1040), line 2. Alternative minimum tax", toMoney(schedule2Line2), "From the Form 6251 detail"],
     ["Form 1040, line 17. Amount from Schedule 2, line 3", toMoney(form1040Line17), "Schedule 2 tax carried to Form 1040"],
     ["Form 1040, line 18. Add lines 16 and 17", toMoney(form1040Line18), "Tax before credits"],
@@ -1627,7 +1655,7 @@ function renderAmtDetail(result) {
     ["Line 4. Alternative minimum taxable income", toMoney(result.amtBaseIncome), "Combine taxable income and AMT adjustments"],
     ["Line 5. Exemption", toMoney(result.amtExemption), "2025 MFJ exemption after any phaseout"],
     ["Line 6. Subtract line 5 from line 4", toMoney(result.amtTaxableIncome), "Amount subject to AMT rate computation"],
-    ["Line 7. Tax", toMoney(result.tentativeMinimumTax), "AMT tax using lower capital-gain/dividend rates where applicable"],
+    ["Line 7. Tax", toMoney(result.tentativeMinimumTax), result.inputs.amtLine7Override === null ? "AMT tax using lower capital-gain/dividend rates where applicable" : `Using known Form 6251 line 7 override. Computed amount was ${toMoney(result.tentativeMinimumTaxComputed)}`],
     ["Line 8. Alternative minimum tax foreign tax credit", toMoney(result.amtFtcUsed), "Separate FTC for AMT"],
     ["Line 9. Tentative minimum tax", toMoney(Math.max(0, result.tentativeMinimumTax - result.amtFtcUsed)), "Line 7 minus line 8"],
     ["Line 10. Regular tax for AMT comparison", toMoney(result.regularTaxForAmtComparison), "Regular tax after regular foreign tax credit"],
