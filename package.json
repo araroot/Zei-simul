@@ -1,0 +1,23 @@
+{
+  "name": "zei_simul",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "smoke:form1116": "python3 -m http.server 8123 >/tmp/zei_simul_http.log 2>&1 & SERVER_PID=$!; sleep 1; node smoke_form1116.js; STATUS=$?; kill $SERVER_PID >/dev/null 2>&1 || true; wait $SERVER_PID >/dev/null 2>&1 || true; exit $STATUS"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/araroot/Zei-simul.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/araroot/Zei-simul/issues"
+  },
+  "homepage": "https://github.com/araroot/Zei-simul#readme",
+  "devDependencies": {
+    "playwright": "^1.58.2"
+  }
+}
