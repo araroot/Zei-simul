@@ -33,6 +33,7 @@
         <button class="top-tab" data-panel="panel-summary">2025 Summary Calculator</button>
         <button class="top-tab" data-panel="panel-builder">Return Builder</button>
         <button class="top-tab" data-panel="panel-qdcg">QDCG Worksheet</button>
+        <button class="top-tab" data-panel="panel-schedule-d-worksheet">Schedule D Worksheet</button>
       </nav>
 
       <main>
@@ -594,8 +595,8 @@
         <section id="panel-qdcg" class="tab-panel">
           <div class="stack">
             <section class="card">
-              <h2>Qualified Dividends And Capital Gain Tax Worksheet</h2>
-              <p class="hint">2025 IRS worksheet preview using the current Return Builder inputs. This drives the regular-tax capital-gains calculation when the Qualified Dividends and Capital Gain Tax Worksheet applies.</p>
+              <h2>Qualified Dividends and Capital Gain Tax Worksheet—Line 16</h2>
+              <p class="hint">Built from the 2025 IRS general instructions worksheet. Complete Form 1040 or 1040-SR through line 15 before using it. This tab assumes 2025 MFJ and no Form 2555.</p>
               <div class="summary-grid">
                 <label class="field-inline"><span>Manual line 4 override</span><input id="qdcg-line4-override" type="number" step="1" /></label>
                 <label class="field-inline"><span>Manual line 5 override</span><input id="qdcg-line5-override" type="number" step="1" /></label>
@@ -616,10 +617,38 @@
             </section>
           </div>
         </section>
+
+        <section id="panel-schedule-d-worksheet" class="tab-panel">
+          <div class="stack">
+            <section class="card">
+              <h2>Schedule D Tax Worksheet—Line 16</h2>
+              <p class="hint">Built from the 2025 Instructions for Schedule D. Complete Form 1040 and Schedule D through line 19 before using it. This tab assumes 2025 MFJ and no Form 2555.</p>
+              <div class="summary-grid">
+                <label class="field-inline"><span>Form 4952 line 4g</span><input id="schedule-d-line3-input" type="number" step="1" /></label>
+                <label class="field-inline"><span>Form 4952 line 4e</span><input id="schedule-d-line4-input" type="number" step="1" /></label>
+                <label class="field-inline"><span>Schedule D line 18</span><input id="schedule-d-line18-input" type="number" step="1" /></label>
+                <label class="field-inline"><span>Schedule D line 19</span><input id="schedule-d-line19-input" type="number" step="1" /></label>
+              </div>
+              <div id="schedule-d-status" class="status-box"></div>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Worksheet Line</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="schedule-d-output"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
   </main>
     </div>
 
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="./app.js?v=20260324q"></script>
+    <script src="./app.js?v=20260324s"></script>
   </body>
 </html>

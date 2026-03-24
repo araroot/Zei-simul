@@ -394,6 +394,12 @@ const qdcgOutput = document.getElementById("qdcg-output");
 const qdcgStatus = document.getElementById("qdcg-status");
 const qdcgLine4OverrideInput = document.getElementById("qdcg-line4-override");
 const qdcgLine5OverrideInput = document.getElementById("qdcg-line5-override");
+const scheduleDOutput = document.getElementById("schedule-d-output");
+const scheduleDStatus = document.getElementById("schedule-d-status");
+const scheduleDLine3Input = document.getElementById("schedule-d-line3-input");
+const scheduleDLine4Input = document.getElementById("schedule-d-line4-input");
+const scheduleDLine18Input = document.getElementById("schedule-d-line18-input");
+const scheduleDLine19Input = document.getElementById("schedule-d-line19-input");
 const builderMetricUsIncome = document.getElementById("builder-metric-us-income");
 const builderMetricForeignPassive = document.getElementById("builder-metric-foreign-passive");
 const builderMetricForeignGeneral = document.getElementById("builder-metric-foreign-general");
@@ -2563,6 +2569,40 @@ function readQdcgOverrides() {
   };
 }
 
+function readScheduleDWorksheetInputs() {
+  return {
+    line3: parseNumber(scheduleDLine3Input),
+    line4: parseNumber(scheduleDLine4Input),
+    line18: parseNumber(scheduleDLine18Input),
+    line19: parseNumber(scheduleDLine19Input)
+  };
+}
+
+function calcLine16Tax2025Mfj(amount) {
+  if (amount <= 0) {
+    return { tax: 0, method: "none" };
+  }
+  if (amount < 100000) {
+    return {
+      tax: calcOrdinaryTax(amount, ORDINARY_BRACKETS_2025),
+      method: "tax-table-fallback"
+    };
+  }
+  if (amount <= 206700) {
+    return { tax: amount * 0.22 - 10172, method: "tax-computation-worksheet" };
+  }
+  if (amount <= 394600) {
+    return { tax: amount * 0.24 - 14306, method: "tax-computation-worksheet" };
+  }
+  if (amount <= 501050) {
+    return { tax: amount * 0.32 - 45874, method: "tax-computation-worksheet" };
+  }
+  if (amount <= 751600) {
+    return { tax: amount * 0.35 - 60905.5, method: "tax-computation-worksheet" };
+  }
+  return { tax: amount * 0.37 - 75937.5, method: "tax-computation-worksheet" };
+}
+
 function computeQdcgWorksheet(result, overrides = {}) {
   const line1 = result.taxableIncome;
   const line2 = result.qualifiedDividends;
@@ -2587,15 +2627,19 @@ function computeQdcgWorksheet(result, overrides = {}) {
   const line19 = line9 + line17;
   const line20 = Math.max(0, line10 - line19);
   const line21 = line20 * 0.2;
-  const line22 = calcOrdinaryTax(line5, ORDINARY_BRACKETS_2025);
+  const line22Calc = calcLine16Tax2025Mfj(line5);
+  const line22 = line22Calc.tax;
   const line23 = line18 + line21 + line22;
-  const line24 = calcOrdinaryTax(line1, ORDINARY_BRACKETS_2025);
+  const line24Calc = calcLine16Tax2025Mfj(line1);
+  const line24 = line24Calc.tax;
   const line25 = Math.min(line23, line24);
 
   return {
     line1, line2, line3, line4, line5, line6, line7, line8, line9, line10,
     line11, line12, line13, line14, line15, line16, line17, line18, line19,
     line20, line21, line22, line23, line24, line25,
+    line22Method: line22Calc.method,
+    line24Method: line24Calc.method,
     line4Computed,
     line5Computed,
     hasLine4Override: overrides.line4 !== null && overrides.line4 !== undefined,
@@ -2608,8 +2652,10 @@ function renderQdcgWorksheet(result, builder) {
 
   const overrides = readQdcgOverrides();
   const worksheet = computeQdcgWorksheet(result, overrides);
-  const likelyScheduleDWorksheet = builder.investmentExpenses > 0;
+  const scheduleDInputs = readScheduleDWorksheetInputs();
+  const likelyScheduleDWorksheet = scheduleDInputs.line3 > 0 || scheduleDInputs.line18 > 0 || scheduleDInputs.line19 > 0;
   const hasPreferentialIncome = worksheet.line2 > 0 || worksheet.line3 > 0;
+  const scheduleDFiled = Math.abs(builder.stcgUs + builder.stcgForeign) > 0 || Math.abs(builder.ltcgUs + builder.ltcgForeign) > 0;
 
   if (qdcgStatus) {
     if (!hasPreferentialIncome) {
@@ -2619,42 +2665,220 @@ function renderQdcgWorksheet(result, builder) {
         worksheet.hasLine4Override ? "line 4" : null,
         worksheet.hasLine5Override ? "line 5" : null
       ].filter(Boolean).join(" and ")}.`;
+    } else if (worksheet.line22Method === "tax-table-fallback" || worksheet.line24Method === "tax-table-fallback") {
+      qdcgStatus.textContent = "This worksheet follows the official 2025 QDCG line sequence. For line 22 or line 24 amounts under $100,000, the IRS worksheet calls for the Tax Table; the app is currently using the bracket formula as a fallback for that path.";
     } else if (likelyScheduleDWorksheet) {
-      qdcgStatus.textContent = "Worksheet preview is shown using the official 2025 Qualified Dividends and Capital Gain Tax Worksheet structure. If Form 4952 line 4g is nonzero or another Schedule D Tax Worksheet trigger applies, IRS may require the Schedule D Tax Worksheet instead.";
+      qdcgStatus.textContent = "This worksheet follows the official 2025 QDCG line sequence. If Form 4952, line 4g, is more than zero or another Schedule D Tax Worksheet trigger applies, the IRS may require the Schedule D Tax Worksheet instead.";
     } else {
-      qdcgStatus.textContent = "Worksheet preview is shown using the official 2025 Qualified Dividends and Capital Gain Tax Worksheet structure.";
+      qdcgStatus.textContent = "This worksheet follows the official 2025 QDCG line sequence for 2025 MFJ inputs.";
     }
   }
 
   const rows = [
-    ["Line 1", toMoney(worksheet.line1), "Form 1040, line 15 taxable income"],
-    ["Line 2", toMoney(worksheet.line2), "Form 1040, line 3a qualified dividends"],
-    ["Line 3", toMoney(worksheet.line3), "Net capital gain used for the worksheet from the current builder run"],
-    ["Line 4", toMoney(worksheet.line4), worksheet.hasLine4Override ? `Manual override. Computed value was ${toMoney(worksheet.line4Computed)}.` : "Line 2 + line 3"],
-    ["Line 5", toMoney(worksheet.line5), worksheet.hasLine5Override ? `Manual override. Computed value was ${toMoney(worksheet.line5Computed)}.` : "Line 1 - line 4"],
-    ["Line 6", toMoney(worksheet.line6), "2025 MFJ 0% capital-gains threshold"],
-    ["Line 7", toMoney(worksheet.line7), "Smaller of line 1 or line 6"],
-    ["Line 8", toMoney(worksheet.line8), "Smaller of line 5 or line 7"],
-    ["Line 9", toMoney(worksheet.line9), "Line 7 - line 8, taxed at 0%"],
-    ["Line 10", toMoney(worksheet.line10), "Smaller of line 1 or line 4"],
-    ["Line 11", toMoney(worksheet.line11), "Amount from line 9"],
-    ["Line 12", toMoney(worksheet.line12), "Line 10 - line 11"],
-    ["Line 13", toMoney(worksheet.line13), "2025 MFJ 15% / 20% threshold"],
-    ["Line 14", toMoney(worksheet.line14), "Smaller of line 1 or line 13"],
-    ["Line 15", toMoney(worksheet.line15), "Line 5 + line 9"],
-    ["Line 16", toMoney(worksheet.line16), "Line 14 - line 15"],
-    ["Line 17", toMoney(worksheet.line17), "Smaller of line 12 or line 16"],
-    ["Line 18", toMoney(worksheet.line18), "Line 17 × 15%"],
-    ["Line 19", toMoney(worksheet.line19), "Line 9 + line 17"],
-    ["Line 20", toMoney(worksheet.line20), "Line 10 - line 19"],
-    ["Line 21", toMoney(worksheet.line21), "Line 20 × 20%"],
-    ["Line 22", toMoney(worksheet.line22), "Tax on line 5 using 2025 ordinary-income rates"],
-    ["Line 23", toMoney(worksheet.line23), "Line 18 + line 21 + line 22"],
-    ["Line 24", toMoney(worksheet.line24), "Tax on all taxable income using 2025 ordinary-income rates"],
-    ["Line 25", toMoney(worksheet.line25), `Smaller of line 23 or line 24. Current builder regular-tax calculation is ${toMoney(result.regularTaxComputed)}.`]
+    ["Line 1. Enter the amount from Form 1040 or 1040-SR, line 15.", toMoney(worksheet.line1), "Form 2555 is not modeled here, so this uses Form 1040 line 15 directly."],
+    ["Line 2. Enter the amount from Form 1040 or 1040-SR, line 3a.", toMoney(worksheet.line2), "Qualified dividends from the builder."],
+    ["Line 3. Are you filing Schedule D? Yes: enter the smaller of line 15 or line 16 of Schedule D. If either line 15 or line 16 is blank or a loss, enter -0-. No: enter the amount from Form 1040 or 1040-SR, line 7a.", toMoney(worksheet.line3), scheduleDFiled
+      ? "Schedule D branch used. This is the modeled smaller of Schedule D line 15 or line 16, not below zero."
+      : "No Schedule D branch used. This would come from Form 1040 line 7a."],
+    ["Line 4. Add lines 2 and 3.", toMoney(worksheet.line4), worksheet.hasLine4Override ? `Manual override. Computed worksheet value was ${toMoney(worksheet.line4Computed)}.` : "Official worksheet formula."],
+    ["Line 5. Subtract line 4 from line 1. If zero or less, enter -0-.", toMoney(worksheet.line5), worksheet.hasLine5Override ? `Manual override. Computed worksheet value was ${toMoney(worksheet.line5Computed)}.` : "Official worksheet formula."],
+    ["Line 6. Enter $96,700 if married filing jointly or qualifying surviving spouse.", toMoney(worksheet.line6), "Official 2025 MFJ / QSS 0% threshold from the worksheet."],
+    ["Line 7. Enter the smaller of line 1 or line 6.", toMoney(worksheet.line7), "Official worksheet formula."],
+    ["Line 8. Enter the smaller of line 5 or line 7.", toMoney(worksheet.line8), "Official worksheet formula."],
+    ["Line 9. Subtract line 8 from line 7. This amount is taxed at 0%.", toMoney(worksheet.line9), "Official worksheet formula."],
+    ["Line 10. Enter the smaller of line 1 or line 4.", toMoney(worksheet.line10), "Official worksheet formula."],
+    ["Line 11. Enter the amount from line 9.", toMoney(worksheet.line11), "Official worksheet formula."],
+    ["Line 12. Subtract line 11 from line 10.", toMoney(worksheet.line12), "Official worksheet formula."],
+    ["Line 13. Enter $600,050 if married filing jointly or qualifying surviving spouse.", toMoney(worksheet.line13), "Official 2025 MFJ / QSS 15% threshold from the worksheet."],
+    ["Line 14. Enter the smaller of line 1 or line 13.", toMoney(worksheet.line14), "Official worksheet formula."],
+    ["Line 15. Add lines 5 and 9.", toMoney(worksheet.line15), "Official worksheet formula."],
+    ["Line 16. Subtract line 15 from line 14. If zero or less, enter -0-.", toMoney(worksheet.line16), "Official worksheet formula."],
+    ["Line 17. Enter the smaller of line 12 or line 16.", toMoney(worksheet.line17), "Official worksheet formula."],
+    ["Line 18. Multiply line 17 by 15% (0.15).", toMoney(worksheet.line18), "Official worksheet formula."],
+    ["Line 19. Add lines 9 and 17.", toMoney(worksheet.line19), "Official worksheet formula."],
+    ["Line 20. Subtract line 19 from line 10.", toMoney(worksheet.line20), "Official worksheet formula."],
+    ["Line 21. Multiply line 20 by 20% (0.20).", toMoney(worksheet.line21), "Official worksheet formula."],
+    ["Line 22. Figure the tax on the amount on line 5. If the amount on line 5 is less than $100,000, use the Tax Table. If the amount on line 5 is $100,000 or more, use the Tax Computation Worksheet.", toMoney(worksheet.line22), worksheet.line22Method === "tax-computation-worksheet" ? "Tax Computation Worksheet path used exactly for 2025 MFJ." : "Tax Table path called for by the IRS worksheet; app currently falls back to bracket math on that path."],
+    ["Line 23. Add lines 18, 21, and 22.", toMoney(worksheet.line23), "Official worksheet formula."],
+    ["Line 24. Figure the tax on the amount on line 1. If the amount on line 1 is less than $100,000, use the Tax Table. If the amount on line 1 is $100,000 or more, use the Tax Computation Worksheet.", toMoney(worksheet.line24), worksheet.line24Method === "tax-computation-worksheet" ? "Tax Computation Worksheet path used exactly for 2025 MFJ." : "Tax Table path called for by the IRS worksheet; app currently falls back to bracket math on that path."],
+    ["Line 25. Tax on all taxable income. Enter the smaller of line 23 or line 24. Also include this amount on the entry space on Form 1040 or 1040-SR, line 16.", toMoney(worksheet.line25), `Official worksheet formula. Builder regular tax before overrides is ${toMoney(result.regularTaxComputed)}.`]
   ];
 
   renderRows(qdcgOutput, rows);
+}
+
+function getModeledScheduleDLines(builder) {
+  const scheduleDLine15 = builder.ltcgUs + builder.ltcgForeign;
+  const scheduleDLine16 = builder.stcgUs + builder.stcgForeign + scheduleDLine15;
+  return { scheduleDLine15, scheduleDLine16 };
+}
+
+function computeScheduleDTaxWorksheet(result, builder, extras = {}) {
+  const { scheduleDLine15, scheduleDLine16 } = getModeledScheduleDLines(builder);
+  const line1 = result.taxableIncome;
+  const line2 = result.qualifiedDividends;
+  const line3 = Math.max(0, extras.line3 || 0);
+  const line4 = Math.max(0, extras.line4 || 0);
+  const line5 = Math.max(0, line3 - line4);
+  const line6 = Math.max(0, line2 - line5);
+  const line7 = scheduleDLine15 > 0 && scheduleDLine16 > 0 ? Math.min(scheduleDLine15, scheduleDLine16) : 0;
+  const line8 = Math.min(line3, line4);
+  const line9 = Math.max(0, line7 - line8);
+  const line10 = line6 + line9;
+  const line11 = Math.max(0, extras.line18 || 0) + Math.max(0, extras.line19 || 0);
+  const line12 = Math.min(line9, line11);
+  const line13 = line10 - line12;
+  const line14 = Math.max(0, line1 - line13);
+  const line15 = 96700;
+  const line16 = Math.min(line1, line15);
+  const line17 = Math.min(line14, line16);
+  const line18 = Math.max(0, line1 - line10);
+  const line19 = Math.min(line1, 394600);
+  const line20 = Math.min(line14, line19);
+  const line21 = Math.max(line18, line20);
+  const line22 = line16 - line17;
+  let line23 = 0;
+  let line24 = 0;
+  let line25 = 0;
+  const line26 = 600050;
+  let line27 = 0;
+  let line28 = 0;
+  let line29 = 0;
+  let line30 = 0;
+  let line31 = 0;
+  let line32 = 0;
+  let line33 = 0;
+  let line34 = 0;
+  let line35 = 0;
+  let line36 = 0;
+  let line37 = 0;
+  let line38 = 0;
+  let line39 = 0;
+  let line40 = 0;
+  let line41 = 0;
+  let line42 = 0;
+  let line43 = 0;
+
+  if (line1 !== line16) {
+    line23 = Math.min(line1, line13);
+    line24 = line22 || 0;
+    line25 = Math.max(0, line23 - line24);
+    line27 = Math.min(line1, line26);
+    line28 = line21 + line22;
+    line29 = Math.max(0, line27 - line28);
+    line30 = Math.min(line25, line29);
+    line31 = line30 * 0.15;
+    line32 = line24 + line30;
+
+    if (line1 !== line32) {
+      line33 = Math.max(0, line23 - line32);
+      line34 = line33 * 0.2;
+
+      if (Math.max(0, extras.line19 || 0) > 0) {
+        line35 = Math.min(line9, Math.max(0, extras.line19 || 0));
+        line36 = line10 + line21;
+        line37 = line1;
+        line38 = Math.max(0, line36 - line37);
+        line39 = Math.max(0, line35 - line38);
+        line40 = line39 * 0.25;
+      }
+
+      if (Math.max(0, extras.line18 || 0) > 0) {
+        line41 = line21 + line22 + line30 + line33 + line39;
+        line42 = Math.max(0, line1 - line41);
+        line43 = line42 * 0.28;
+      }
+    }
+  }
+  const line44Calc = calcLine16Tax2025Mfj(line21);
+  const line44 = line44Calc.tax;
+  const line45 = line31 + line34 + line40 + line43 + line44;
+  const line46Calc = calcLine16Tax2025Mfj(line1);
+  const line46 = line46Calc.tax;
+  const line47 = Math.min(line45, line46);
+
+  return {
+    scheduleDLine15,
+    scheduleDLine16,
+    line1, line2, line3, line4, line5, line6, line7, line8, line9, line10,
+    line11, line12, line13, line14, line15, line16, line17, line18, line19,
+    line20, line21, line22, line23, line24, line25, line26, line27, line28,
+    line29, line30, line31, line32, line33, line34, line35, line36, line37,
+    line38, line39, line40, line41, line42, line43, line44, line45, line46,
+    line47,
+    line44Method: line44Calc.method,
+    line46Method: line46Calc.method
+  };
+}
+
+function renderScheduleDTaxWorksheet(result, builder) {
+  if (!scheduleDOutput) return;
+
+  const extras = readScheduleDWorksheetInputs();
+  const worksheet = computeScheduleDTaxWorksheet(result, builder, extras);
+  const worksheetLikelyRequired = extras.line3 > 0 || extras.line18 > 0 || extras.line19 > 0;
+
+  if (scheduleDStatus) {
+    if (worksheet.line44Method === "tax-table-fallback" || worksheet.line46Method === "tax-table-fallback") {
+      scheduleDStatus.textContent = "This worksheet follows the official 2025 Schedule D Tax Worksheet line sequence. If line 44 or line 46 is under $100,000, the IRS worksheet calls for the Tax Table; the app currently falls back to bracket math on that path.";
+    } else if (!worksheetLikelyRequired) {
+      scheduleDStatus.textContent = "Schedule D Tax Worksheet is shown in IRS form order. For most current builder scenarios, the QDCG worksheet is the active line 16 worksheet unless Form 4952 line 4g or Schedule D line 18 or 19 is nonzero.";
+    } else {
+      scheduleDStatus.textContent = "Schedule D Tax Worksheet is shown in IRS form order for 2025 MFJ inputs.";
+    }
+  }
+
+  const rows = [
+    ["Line 1. Enter your taxable income from Form 1040, 1040-SR, or 1040-NR, line 15.", toMoney(worksheet.line1), "Form 2555 is not modeled here, so this uses Form 1040 line 15 directly."],
+    ["Line 2. Enter your qualified dividends from Form 1040, 1040-SR, or 1040-NR, line 3a.", toMoney(worksheet.line2), "Qualified dividends from the builder."],
+    ["Line 3. Enter the amount from Form 4952, line 4g.", toMoney(worksheet.line3), "Manual input on this tab."],
+    ["Line 4. Enter the amount from Form 4952, line 4e.", toMoney(worksheet.line4), "Manual input on this tab."],
+    ["Line 5. Subtract line 4 from line 3. If zero or less, enter -0-.", toMoney(worksheet.line5), "Official worksheet formula."],
+    ["Line 6. Subtract line 5 from line 2. If zero or less, enter -0-.", toMoney(worksheet.line6), "Official worksheet formula."],
+    ["Line 7. Enter the smaller of line 15 or line 16 of Schedule D.", toMoney(worksheet.line7), `Modeled from current builder inputs. Schedule D line 15 = ${toMoney(worksheet.scheduleDLine15)}; line 16 = ${toMoney(worksheet.scheduleDLine16)}.`],
+    ["Line 8. Enter the smaller of line 3 or line 4.", toMoney(worksheet.line8), "Official worksheet formula."],
+    ["Line 9. Subtract line 8 from line 7. If zero or less, enter -0-.", toMoney(worksheet.line9), "Official worksheet formula."],
+    ["Line 10. Add lines 6 and 9.", toMoney(worksheet.line10), "Official worksheet formula."],
+    ["Line 11. Add lines 18 and 19 of Schedule D.", toMoney(worksheet.line11), "Uses the manual Schedule D line 18 and line 19 inputs on this tab."],
+    ["Line 12. Enter the smaller of line 9 or line 11.", toMoney(worksheet.line12), "Official worksheet formula."],
+    ["Line 13. Subtract line 12 from line 10.", toMoney(worksheet.line13), "Official worksheet formula."],
+    ["Line 14. Subtract line 13 from line 1. If zero or less, enter -0-.", toMoney(worksheet.line14), "Official worksheet formula."],
+    ["Line 15. Enter $96,700 if married filing jointly or qualifying surviving spouse.", toMoney(worksheet.line15), "Official 2025 MFJ / QSS 0% threshold from the worksheet."],
+    ["Line 16. Enter the smaller of line 1 or line 15.", toMoney(worksheet.line16), "Official worksheet formula."],
+    ["Line 17. Enter the smaller of line 14 or line 16.", toMoney(worksheet.line17), "Official worksheet formula."],
+    ["Line 18. Subtract line 10 from line 1. If zero or less, enter -0-.", toMoney(worksheet.line18), "Official worksheet formula."],
+    ["Line 19. Enter the smaller of line 1 or $394,600 if married filing jointly or qualifying surviving spouse.", toMoney(worksheet.line19), "Official 2025 MFJ / QSS comparison line."],
+    ["Line 20. Enter the smaller of line 14 or line 19.", toMoney(worksheet.line20), "Official worksheet formula."],
+    ["Line 21. Enter the larger of line 18 or line 20.", toMoney(worksheet.line21), "Official worksheet formula."],
+    ["Line 22. Subtract line 17 from line 16. This amount is taxed at 0%.", toMoney(worksheet.line22), "Official worksheet formula."],
+    ["Line 23. Enter the smaller of line 1 or line 13.", toMoney(worksheet.line23), "Official worksheet formula."],
+    ["Line 24. Enter the amount from line 22. (If line 22 is blank, enter -0-.)", toMoney(worksheet.line24), "Official worksheet formula."],
+    ["Line 25. Subtract line 24 from line 23. If zero or less, enter -0-.", toMoney(worksheet.line25), "Official worksheet formula."],
+    ["Line 26. Enter $600,050 if married filing jointly or qualifying surviving spouse.", toMoney(worksheet.line26), "Official 2025 MFJ / QSS 15% / 20% threshold from the worksheet."],
+    ["Line 27. Enter the smaller of line 1 or line 26.", toMoney(worksheet.line27), "Official worksheet formula."],
+    ["Line 28. Add lines 21 and 22.", toMoney(worksheet.line28), "Official worksheet formula."],
+    ["Line 29. Subtract line 28 from line 27. If zero or less, enter -0-.", toMoney(worksheet.line29), "Official worksheet formula."],
+    ["Line 30. Enter the smaller of line 25 or line 29.", toMoney(worksheet.line30), "Official worksheet formula."],
+    ["Line 31. Multiply line 30 by 15% (0.15).", toMoney(worksheet.line31), "Official worksheet formula."],
+    ["Line 32. Add lines 24 and 30.", toMoney(worksheet.line32), "Official worksheet formula."],
+    ["Line 33. Subtract line 32 from line 23.", toMoney(worksheet.line33), "Official worksheet formula."],
+    ["Line 34. Multiply line 33 by 20% (0.20).", toMoney(worksheet.line34), "Official worksheet formula."],
+    ["Line 35. Enter the smaller of line 9 above or Schedule D, line 19.", toMoney(worksheet.line35), "Uses the manual Schedule D line 19 input on this tab."],
+    ["Line 36. Add lines 10 and 21.", toMoney(worksheet.line36), "Official worksheet formula."],
+    ["Line 37. Enter the amount from line 1 above.", toMoney(worksheet.line37), "Official worksheet formula."],
+    ["Line 38. Subtract line 37 from line 36. If zero or less, enter -0-.", toMoney(worksheet.line38), "Official worksheet formula."],
+    ["Line 39. Subtract line 38 from line 35. If zero or less, enter -0-.", toMoney(worksheet.line39), "Official worksheet formula."],
+    ["Line 40. Multiply line 39 by 25% (0.25).", toMoney(worksheet.line40), "Official worksheet formula."],
+    ["Line 41. Add lines 21, 22, 30, 33, and 39.", toMoney(worksheet.line41), "Official worksheet formula."],
+    ["Line 42. Subtract line 41 from line 1.", toMoney(worksheet.line42), "Official worksheet formula."],
+    ["Line 43. Multiply line 42 by 28% (0.28).", toMoney(worksheet.line43), "Official worksheet formula."],
+    ["Line 44. Figure the tax on the amount on line 21. If the amount on line 21 is less than $100,000, use the Tax Table. If the amount on line 21 is $100,000 or more, use the Tax Computation Worksheet.", toMoney(worksheet.line44), worksheet.line44Method === "tax-computation-worksheet" ? "Tax Computation Worksheet path used exactly for 2025 MFJ." : "Tax Table path called for by the IRS worksheet; app currently falls back to bracket math on that path."],
+    ["Line 45. Add lines 31, 34, 40, 43, and 44.", toMoney(worksheet.line45), "Official worksheet formula."],
+    ["Line 46. Figure the tax on the amount on line 1. If the amount on line 1 is less than $100,000, use the Tax Table. If the amount on line 1 is $100,000 or more, use the Tax Computation Worksheet.", toMoney(worksheet.line46), worksheet.line46Method === "tax-computation-worksheet" ? "Tax Computation Worksheet path used exactly for 2025 MFJ." : "Tax Table path called for by the IRS worksheet; app currently falls back to bracket math on that path."],
+    ["Line 47. Tax on all taxable income (including capital gains and qualified dividends). Enter the smaller of line 45 or line 46. Also include this amount on Form 1040 or 1040-SR, line 16.", toMoney(worksheet.line47), "Official worksheet formula."]
+  ];
+
+  renderRows(scheduleDOutput, rows);
 }
 
 function updateBuilderMetrics(builder, result) {
@@ -2700,6 +2924,7 @@ function recalcBuilder() {
   renderRows(builder1116PassiveOutput, getBuilder1116Rows(builder, result, "passive"));
   renderRows(builder1116GeneralOutput, getBuilder1116Rows(builder, result, "general"));
   renderQdcgWorksheet(result, builder);
+  renderScheduleDTaxWorksheet(result, builder);
   renderBuilderAssumptions();
   updateBuilderMetrics(builder, result);
   setBuilderPdfStatus("Ready to generate a combined packet with Form 1040, Form 6251, Form 8960, and both Form 1116 forms.");
@@ -2715,6 +2940,9 @@ function resetBuilder() {
   seedBuilderDefaults();
   if (qdcgLine4OverrideInput) qdcgLine4OverrideInput.value = "";
   if (qdcgLine5OverrideInput) qdcgLine5OverrideInput.value = "";
+  [scheduleDLine3Input, scheduleDLine4Input, scheduleDLine18Input, scheduleDLine19Input].forEach((input) => {
+    if (input) input.value = "";
+  });
   recalcBuilder();
 }
 
@@ -2810,6 +3038,12 @@ function bindBuilderEvents() {
   [qdcgLine4OverrideInput, qdcgLine5OverrideInput].forEach((input) => {
     if (!input) return;
     input.placeholder = "Optional";
+    input.addEventListener("input", recalcBuilder);
+    input.addEventListener("change", recalcBuilder);
+  });
+  [scheduleDLine3Input, scheduleDLine4Input, scheduleDLine18Input, scheduleDLine19Input].forEach((input) => {
+    if (!input) return;
+    input.placeholder = "0";
     input.addEventListener("input", recalcBuilder);
     input.addEventListener("change", recalcBuilder);
   });
