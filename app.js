@@ -242,6 +242,7 @@ const sum1116Inputs = {
 
 const sumRecalcBtn = document.getElementById("sum-recalc");
 const sumAssumptions = document.getElementById("sum-assumptions");
+const sum1040Output = document.getElementById("sum-1040-output");
 const sumOutput = document.getElementById("sum-output");
 const sumAmtOutput = document.getElementById("sum-amt-output");
 const sumNiitOutput = document.getElementById("sum-niit-output");
@@ -1551,6 +1552,69 @@ function renderSummaryOutput(result) {
   }).join("");
 }
 
+function render1040Preview(result) {
+  if (!sum1040Output) return;
+
+  const schedule3Line1 = result.ftcAllowed;
+  const schedule3Line8 = result.ftcAllowed + result.otherNonrefundableCreditsAllowed;
+  const schedule3Line15 = result.inputs.otherPayments;
+  const form1040Line20 = schedule3Line8;
+  const form1040Line19 = 0;
+  const form1040Line21 = form1040Line19 + form1040Line20;
+  const form1040Line22 = result.taxAfterCredits;
+  const schedule2Line2 = result.amt;
+  const schedule2Line12 = result.niit;
+  const schedule2Line21 = result.totalOtherTaxes;
+  const form1040Line17 = schedule2Line2;
+  const form1040Line18 = result.taxBeforeCredits;
+  const form1040Line23 = schedule2Line21;
+  const form1040Line24 = result.totalTax;
+  const form1040Line25d = result.inputs.withholding;
+  const form1040Line31 = schedule3Line15;
+  const form1040Line32 = result.totalPayments;
+  const form1040Line33 = result.totalPayments;
+  const form1040Line34 = result.refund;
+  const form1040Line37 = result.amountOwedBeforePenalty;
+  const form1040Line38 = result.inputs.penalty;
+
+  const rows = [
+    ["Form 1040, line 9. Total income", toMoney(result.totalIncome), "Income total used by this model"],
+    ["Form 1040, line 10. Adjustments to income", toMoney(0), "No above-the-line adjustments modeled"],
+    ["Form 1040, line 11. Adjusted gross income", toMoney(result.agi), "AGI used throughout the return preview"],
+    ["Form 1040, line 12. Standard deduction or itemized deductions", toMoney(result.deductionUsed), `Using ${result.deductionType} deduction`],
+    ["Form 1040, line 13. Qualified business income deduction", toMoney(0), "Not modeled"],
+    ["Form 1040, line 14. Add lines 12 and 13", toMoney(result.deductionUsed), "Total deductions"],
+    ["Form 1040, line 15. Taxable income", toMoney(result.taxableIncome), "AGI minus total deductions"],
+    ["Form 1040, line 16. Tax", toMoney(result.regularTax), "Regular tax before Schedule 2 taxes and credits"],
+    ["Schedule 2 (Form 1040), line 2. Alternative minimum tax", toMoney(schedule2Line2), "From the Form 6251 detail"],
+    ["Form 1040, line 17. Amount from Schedule 2, line 3", toMoney(form1040Line17), "Schedule 2 tax carried to Form 1040"],
+    ["Form 1040, line 18. Add lines 16 and 17", toMoney(form1040Line18), "Tax before credits"],
+    ["Schedule 3 (Form 1040), line 1. Foreign tax credit", toMoney(schedule3Line1), "FTC from Form 1116 / limitation math"],
+    ["Schedule 3 (Form 1040), line 8. Total nonrefundable credits", toMoney(schedule3Line8), "Credits carried to Form 1040, line 20"],
+    ["Form 1040, line 19. Child tax credit or credit for other dependents", toMoney(form1040Line19), "Not modeled"],
+    ["Form 1040, line 20. Amount from Schedule 3, line 8", toMoney(form1040Line20), "Total nonrefundable credits"],
+    ["Form 1040, line 21. Add lines 19 and 20", toMoney(form1040Line21), "Reserved / not modeled separately here"],
+    ["Form 1040, line 22. Subtract line 21 from line 18", toMoney(form1040Line22), "Tax after credits"],
+    ["Schedule 2 (Form 1040), line 12. Net investment income tax", toMoney(schedule2Line12), "From the Form 8960 detail"],
+    ["Schedule 2 (Form 1040), line 21. Total other taxes", toMoney(schedule2Line21), "NIIT plus any manual other taxes input"],
+    ["Form 1040, line 23. Other taxes, including self-employment tax", toMoney(form1040Line23), "Amount from Schedule 2, line 21"],
+    ["Form 1040, line 24. Total tax", toMoney(form1040Line24), "Line 22 plus line 23"],
+    ["Form 1040, line 25d. Federal income tax withheld", toMoney(form1040Line25d), "Withholding input"],
+    ["Schedule 3 (Form 1040), line 15. Other payments and refundable credits", toMoney(schedule3Line15), "Other payments input"],
+    ["Form 1040, line 31. Amount from Schedule 3, line 15", toMoney(form1040Line31), "Payments carried from Schedule 3"],
+    ["Form 1040, line 32. Add lines 25a through 31", toMoney(form1040Line32), "Total payments and refundable credits"],
+    ["Form 1040, line 33. Total payments", toMoney(form1040Line33), "Same as line 32 in this model"],
+    ["Form 1040, line 34. Refund", toMoney(form1040Line34), "Shown if payments exceed total tax and penalty"],
+    ["Form 1040, line 37. Amount you owe", toMoney(form1040Line37), "Amount owed before underpayment penalty"],
+    ["Form 1040, line 38. Estimated tax penalty", toMoney(form1040Line38), "Underpayment penalty input"],
+    ["Bottom line after line 38", toMoney(result.amountOwed), "Total amount due including penalty"]
+  ];
+
+  sum1040Output.innerHTML = rows
+    .map(([k, v, n]) => `<tr><td>${k}</td><td>${v}</td><td>${n}</td></tr>`)
+    .join("");
+}
+
 function renderAmtDetail(result) {
   if (!sumAmtOutput) return;
 
@@ -1908,6 +1972,7 @@ function triggerPdfDownload(bytes, filename) {
 function recalcSummary() {
   const inputs = readSummaryInputs();
   const result = calculateSummaryTax(inputs);
+  render1040Preview(result);
   renderSummaryOutput(result);
   renderAmtDetail(result);
   renderNiitDetail(result);
