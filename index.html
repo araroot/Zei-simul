@@ -87,7 +87,7 @@
           <div class="stack">
             <section class="card">
               <h2>Summary_2025 Inputs</h2>
-              <p class="hint">Defaults pulled from workbook `Summary_2025` (USD totals). To match the base tax more exactly, fill in the lower-rate dividends, short-term gains/losses, long-term gains/losses, investment expenses, and any AMT-specific addbacks you know.</p>
+              <p class="hint">Defaults pulled from workbook `Summary_2025` (USD totals). The goal of this tab is now to match Form 1040 first, then the supporting forms below it.</p>
               <div class="scenario-tabs" id="summary-scenario-tabs">
                 <button class="scenario-tab active" data-scenario="A">Scenario A</button>
                 <button class="scenario-tab" data-scenario="B">Scenario B</button>
@@ -131,65 +131,54 @@
             </section>
 
             <section class="card">
-              <h2>Assumptions Used</h2>
-              <ul class="assumptions" id="sum-assumptions"></ul>
-            </section>
-
-            <section class="card">
-              <h2>Form 1116 Setup</h2>
-              <p class="hint">Scenario-specific FTC intake for the official 2025 IRS Form 1116. Start with Scenario B, then reuse the same structure for A, C, D, and E.</p>
-              <div class="summary-grid">
-                <label class="field-inline"><span>Taxpayer name</span><input id="sum1116-name" type="text" /></label>
-                <label class="field-inline"><span>Taxpayer SSN / TIN</span><input id="sum1116-ssn" type="text" /></label>
-                <label class="field-inline">
-                  <span>Separate category</span>
-                  <select id="sum1116-category">
-                    <option value="passive">Passive category income</option>
-                    <option value="general">General category income</option>
-                  </select>
-                </label>
-                <label class="field-inline"><span>Country</span><input id="sum1116-country" type="text" /></label>
-                <label class="field-inline">
-                  <span>Foreign taxes claimed as</span>
-                  <select id="sum1116-method">
-                    <option value="">Select</option>
-                    <option value="paid">Paid</option>
-                    <option value="accrued">Accrued</option>
-                  </select>
-                </label>
-                <label class="field-inline"><span>Carryover into 2025</span><input id="sum1116-carryover" type="number" step="1" /></label>
-                <label class="field-inline"><span>Carryback into 2025</span><input id="sum1116-carryback" type="number" step="1" /></label>
-                <label class="field-inline"><span>Foreign qualified dividends</span><input id="sum1116-foreign-qualified-dividends" type="number" step="1" /></label>
-                <label class="field-inline"><span>Line 2 deductions definitely related</span><input id="sum1116-line2" type="number" step="1" /></label>
-                <label class="field-inline"><span>Line 3a expense allocable to gross income</span><input id="sum1116-line3a" type="number" step="1" /></label>
-                <label class="field-inline"><span>Line 3b definitely related deductions</span><input id="sum1116-line3b" type="number" step="1" /></label>
-                <label class="field-inline"><span>Line 3c other deductions definitely related</span><input id="sum1116-line3c" type="number" step="1" /></label>
-                <label class="field-inline"><span>Line 3d apportioned deductions</span><input id="sum1116-line3d" type="number" step="1" /></label>
-                <label class="field-inline"><span>Line 3e apportioned losses / adjustments</span><input id="sum1116-line3e" type="number" step="1" /></label>
-                <label class="field-inline"><span>Line 3f other not definitely related deductions</span><input id="sum1116-line3f" type="number" step="1" /></label>
-                <label class="field-inline"><span>Line 4a home mortgage interest allocable</span><input id="sum1116-line4a" type="number" step="1" /></label>
-                <label class="field-inline"><span>Line 4b other interest expense allocable</span><input id="sum1116-line4b" type="number" step="1" /></label>
-                <label class="field-inline"><span>Line 5 losses from foreign sources</span><input id="sum1116-line5" type="number" step="1" /></label>
-              </div>
-              <div class="actions-row">
-                <button id="sum1116-generate" class="btn">Generate Form 1116 PDF</button>
-              </div>
-              <div id="sum1116-status" class="status-box"></div>
-            </section>
-
-            <section class="card">
-              <h2>Form 1116 Preview</h2>
-              <p class="hint">Line-by-line preview from currently known Scenario data. This will become the source for the PDF once the remaining filing facts are confirmed.</p>
+              <h2>Inputs Needed To Match Form 1040</h2>
+              <p class="hint">These are the fields that matter most for the return lines shown on your CA-prepared Form 1040.</p>
               <div class="table-wrap">
                 <table class="summary-table">
                   <thead>
                     <tr>
-                      <th>Form 1116 item</th>
-                      <th>Value</th>
-                      <th>Notes</th>
+                      <th>Target Line</th>
+                      <th>Most Important Inputs</th>
+                      <th>Why It Matters</th>
                     </tr>
                   </thead>
-                  <tbody id="sum1116-preview"></tbody>
+                  <tbody>
+                    <tr>
+                      <td>`Form 1040 line 11b`</td>
+                      <td>`Interest`, `Total dividends`, `Short-term gains / losses`, `Long-term gains / losses`, `Other ordinary income`</td>
+                      <td>These drive adjusted gross income.</td>
+                    </tr>
+                    <tr>
+                      <td>`Form 1040 line 12e`</td>
+                      <td>`Itemized taxes / SALT`, `Itemized interest`, `Other itemized deductions`, `Standard deduction`</td>
+                      <td>This decides whether itemized deductions or the standard deduction is used.</td>
+                    </tr>
+                    <tr>
+                      <td>`Form 1040 line 16`</td>
+                      <td>`Short-term gains / losses`, `Long-term gains / losses`, `Dividends taxed at lower rates`</td>
+                      <td>These decide how much income is taxed at ordinary rates versus lower capital-gain / qualified-dividend rates.</td>
+                    </tr>
+                    <tr>
+                      <td>`Form 1040 line 17`</td>
+                      <td>`Tax-free bond interest that counts for AMT`, `Other AMT adjustments / preferences`, `Minimum-tax foreign tax credit`, `Itemized taxes / SALT`</td>
+                      <td>These drive the minimum-tax amount coming from Schedule 2 / Form 6251.</td>
+                    </tr>
+                    <tr>
+                      <td>`Form 1040 line 20`</td>
+                      <td>`Foreign taxes paid`, `FTC carryover`, `Other nonrefundable credits`</td>
+                      <td>These determine the amount from Schedule 3 used against tax.</td>
+                    </tr>
+                    <tr>
+                      <td>`Form 1040 line 23`</td>
+                      <td>`Expenses tied to investing`, `Other taxes besides NIIT`, plus the income fields above</td>
+                      <td>These determine NIIT and any other Schedule 2 taxes.</td>
+                    </tr>
+                    <tr>
+                      <td>`Form 1040 lines 25-38`</td>
+                      <td>`Federal withholding`, `Other payments / refundable credits`, `Underpayment penalty`</td>
+                      <td>These determine refund versus amount due.</td>
+                    </tr>
+                  </tbody>
                 </table>
               </div>
             </section>
@@ -260,12 +249,76 @@
                 </table>
               </div>
             </section>
+
+            <section class="card">
+              <h2>Assumptions Used</h2>
+              <ul class="assumptions" id="sum-assumptions"></ul>
+            </section>
+
+            <section class="card">
+              <h2>Form 1116 Setup</h2>
+              <p class="hint">Foreign tax credit support is kept below the Form 1040 workup so the main return stays the primary focus.</p>
+              <div class="summary-grid">
+                <label class="field-inline"><span>Taxpayer name</span><input id="sum1116-name" type="text" /></label>
+                <label class="field-inline"><span>Taxpayer SSN / TIN</span><input id="sum1116-ssn" type="text" /></label>
+                <label class="field-inline">
+                  <span>Separate category</span>
+                  <select id="sum1116-category">
+                    <option value="passive">Passive category income</option>
+                    <option value="general">General category income</option>
+                  </select>
+                </label>
+                <label class="field-inline"><span>Country</span><input id="sum1116-country" type="text" /></label>
+                <label class="field-inline">
+                  <span>Foreign taxes claimed as</span>
+                  <select id="sum1116-method">
+                    <option value="">Select</option>
+                    <option value="paid">Paid</option>
+                    <option value="accrued">Accrued</option>
+                  </select>
+                </label>
+                <label class="field-inline"><span>Carryover into 2025</span><input id="sum1116-carryover" type="number" step="1" /></label>
+                <label class="field-inline"><span>Carryback into 2025</span><input id="sum1116-carryback" type="number" step="1" /></label>
+                <label class="field-inline"><span>Foreign qualified dividends</span><input id="sum1116-foreign-qualified-dividends" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 2 deductions definitely related</span><input id="sum1116-line2" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 3a expense allocable to gross income</span><input id="sum1116-line3a" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 3b definitely related deductions</span><input id="sum1116-line3b" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 3c other deductions definitely related</span><input id="sum1116-line3c" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 3d apportioned deductions</span><input id="sum1116-line3d" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 3e apportioned losses / adjustments</span><input id="sum1116-line3e" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 3f other not definitely related deductions</span><input id="sum1116-line3f" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 4a home mortgage interest allocable</span><input id="sum1116-line4a" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 4b other interest expense allocable</span><input id="sum1116-line4b" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 5 losses from foreign sources</span><input id="sum1116-line5" type="number" step="1" /></label>
+              </div>
+              <div class="actions-row">
+                <button id="sum1116-generate" class="btn">Generate Form 1116 PDF</button>
+              </div>
+              <div id="sum1116-status" class="status-box"></div>
+            </section>
+
+            <section class="card">
+              <h2>Form 1116 Preview</h2>
+              <p class="hint">Line-by-line preview from currently known Scenario data. This will become the source for the PDF once the remaining filing facts are confirmed.</p>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Form 1116 item</th>
+                      <th>Value</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sum1116-preview"></tbody>
+                </table>
+              </div>
+            </section>
           </div>
         </section>
   </main>
     </div>
 
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="./app.js?v=20260324j"></script>
+    <script src="./app.js?v=20260324k"></script>
   </body>
 </html>
