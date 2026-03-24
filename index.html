@@ -596,6 +596,10 @@
             <section class="card">
               <h2>Qualified Dividends And Capital Gain Tax Worksheet</h2>
               <p class="hint">2025 IRS worksheet preview using the current Return Builder inputs. This drives the regular-tax capital-gains calculation when the Qualified Dividends and Capital Gain Tax Worksheet applies.</p>
+              <div class="summary-grid">
+                <label class="field-inline"><span>Manual line 4 override</span><input id="qdcg-line4-override" type="number" step="1" /></label>
+                <label class="field-inline"><span>Manual line 5 override</span><input id="qdcg-line5-override" type="number" step="1" /></label>
+              </div>
               <div id="qdcg-status" class="status-box"></div>
               <div class="table-wrap">
                 <table class="summary-table">
@@ -616,6 +620,6 @@
     </div>
 
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="./app.js?v=20260324p"></script>
+    <script src="./app.js?v=20260324q"></script>
   </body>
 </html>

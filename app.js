@@ -392,6 +392,8 @@ const builder1116GeneralOutput = document.getElementById("builder-1116-general-o
 const builderAssumptions = document.getElementById("builder-assumptions");
 const qdcgOutput = document.getElementById("qdcg-output");
 const qdcgStatus = document.getElementById("qdcg-status");
+const qdcgLine4OverrideInput = document.getElementById("qdcg-line4-override");
+const qdcgLine5OverrideInput = document.getElementById("qdcg-line5-override");
 const builderMetricUsIncome = document.getElementById("builder-metric-us-income");
 const builderMetricForeignPassive = document.getElementById("builder-metric-foreign-passive");
 const builderMetricForeignGeneral = document.getElementById("builder-metric-foreign-general");
@@ -2552,12 +2554,23 @@ function renderBuilderAssumptions() {
   builderAssumptions.innerHTML = assumptions.map((item) => `<li>${item}</li>`).join("");
 }
 
-function computeQdcgWorksheet(result) {
+function readQdcgOverrides() {
+  const line4Raw = (qdcgLine4OverrideInput?.value ?? "").trim();
+  const line5Raw = (qdcgLine5OverrideInput?.value ?? "").trim();
+  return {
+    line4: line4Raw === "" ? null : parseNumber(qdcgLine4OverrideInput),
+    line5: line5Raw === "" ? null : parseNumber(qdcgLine5OverrideInput)
+  };
+}
+
+function computeQdcgWorksheet(result, overrides = {}) {
   const line1 = result.taxableIncome;
   const line2 = result.qualifiedDividends;
   const line3 = Math.max(0, result.capNet.prefCapGain);
-  const line4 = line2 + line3;
-  const line5 = Math.max(0, line1 - line4);
+  const line4Computed = line2 + line3;
+  const line4 = overrides.line4 ?? line4Computed;
+  const line5Computed = Math.max(0, line1 - line4);
+  const line5 = overrides.line5 ?? line5Computed;
   const line6 = 96700;
   const line7 = Math.min(line1, line6);
   const line8 = Math.min(line5, line7);
@@ -2582,20 +2595,30 @@ function computeQdcgWorksheet(result) {
   return {
     line1, line2, line3, line4, line5, line6, line7, line8, line9, line10,
     line11, line12, line13, line14, line15, line16, line17, line18, line19,
-    line20, line21, line22, line23, line24, line25
+    line20, line21, line22, line23, line24, line25,
+    line4Computed,
+    line5Computed,
+    hasLine4Override: overrides.line4 !== null && overrides.line4 !== undefined,
+    hasLine5Override: overrides.line5 !== null && overrides.line5 !== undefined
   };
 }
 
 function renderQdcgWorksheet(result, builder) {
   if (!qdcgOutput) return;
 
-  const worksheet = computeQdcgWorksheet(result);
+  const overrides = readQdcgOverrides();
+  const worksheet = computeQdcgWorksheet(result, overrides);
   const likelyScheduleDWorksheet = builder.investmentExpenses > 0;
   const hasPreferentialIncome = worksheet.line2 > 0 || worksheet.line3 > 0;
 
   if (qdcgStatus) {
     if (!hasPreferentialIncome) {
       qdcgStatus.textContent = "No qualified dividends or net capital gain is currently flowing to the worksheet. The worksheet is shown for completeness, but the preferential-rate path is inactive.";
+    } else if (worksheet.hasLine4Override || worksheet.hasLine5Override) {
+      qdcgStatus.textContent = `Using manual override${worksheet.hasLine4Override && worksheet.hasLine5Override ? "s" : ""} for QDCG worksheet ${[
+        worksheet.hasLine4Override ? "line 4" : null,
+        worksheet.hasLine5Override ? "line 5" : null
+      ].filter(Boolean).join(" and ")}.`;
     } else if (likelyScheduleDWorksheet) {
       qdcgStatus.textContent = "Worksheet preview is shown using the official 2025 Qualified Dividends and Capital Gain Tax Worksheet structure. If Form 4952 line 4g is nonzero or another Schedule D Tax Worksheet trigger applies, IRS may require the Schedule D Tax Worksheet instead.";
     } else {
@@ -2607,8 +2630,8 @@ function renderQdcgWorksheet(result, builder) {
     ["Line 1", toMoney(worksheet.line1), "Form 1040, line 15 taxable income"],
     ["Line 2", toMoney(worksheet.line2), "Form 1040, line 3a qualified dividends"],
     ["Line 3", toMoney(worksheet.line3), "Net capital gain used for the worksheet from the current builder run"],
-    ["Line 4", toMoney(worksheet.line4), "Line 2 + line 3"],
-    ["Line 5", toMoney(worksheet.line5), "Line 1 - line 4"],
+    ["Line 4", toMoney(worksheet.line4), worksheet.hasLine4Override ? `Manual override. Computed value was ${toMoney(worksheet.line4Computed)}.` : "Line 2 + line 3"],
+    ["Line 5", toMoney(worksheet.line5), worksheet.hasLine5Override ? `Manual override. Computed value was ${toMoney(worksheet.line5Computed)}.` : "Line 1 - line 4"],
     ["Line 6", toMoney(worksheet.line6), "2025 MFJ 0% capital-gains threshold"],
     ["Line 7", toMoney(worksheet.line7), "Smaller of line 1 or line 6"],
     ["Line 8", toMoney(worksheet.line8), "Smaller of line 5 or line 7"],
@@ -2690,6 +2713,8 @@ function seedBuilderDefaults() {
 
 function resetBuilder() {
   seedBuilderDefaults();
+  if (qdcgLine4OverrideInput) qdcgLine4OverrideInput.value = "";
+  if (qdcgLine5OverrideInput) qdcgLine5OverrideInput.value = "";
   recalcBuilder();
 }
 
@@ -2781,6 +2806,12 @@ function bindBuilderEvents() {
     input.addEventListener("focus", () => {
       input.select?.();
     });
+  });
+  [qdcgLine4OverrideInput, qdcgLine5OverrideInput].forEach((input) => {
+    if (!input) return;
+    input.placeholder = "Optional";
+    input.addEventListener("input", recalcBuilder);
+    input.addEventListener("change", recalcBuilder);
   });
 }
 
