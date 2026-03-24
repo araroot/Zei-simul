@@ -392,6 +392,23 @@ th {
   color: var(--ink);
 }
 
+.field-inline input[type="number"],
+.builder-field input[type="number"],
+.detail-input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.field-inline input[type="number"]::-webkit-outer-spin-button,
+.field-inline input[type="number"]::-webkit-inner-spin-button,
+.builder-field input[type="number"]::-webkit-outer-spin-button,
+.builder-field input[type="number"]::-webkit-inner-spin-button,
+.detail-input[type="number"]::-webkit-outer-spin-button,
+.detail-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .field-inline select {
   border: 1px solid var(--line);
   border-radius: 8px;
