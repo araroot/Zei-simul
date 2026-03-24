@@ -87,7 +87,7 @@
           <div class="stack">
             <section class="card">
               <h2>Summary_2025 Inputs</h2>
-              <p class="hint">Defaults pulled from workbook `Summary_2025` (USD totals). Edit as needed.</p>
+              <p class="hint">Defaults pulled from workbook `Summary_2025` (USD totals). To match the base tax more exactly, fill in the lower-rate dividends, short-term gains/losses, long-term gains/losses, investment expenses, and any AMT-specific addbacks you know.</p>
               <div class="scenario-tabs" id="summary-scenario-tabs">
                 <button class="scenario-tab active" data-scenario="A">Scenario A</button>
                 <button class="scenario-tab" data-scenario="B">Scenario B</button>
@@ -96,17 +96,18 @@
                 <button class="scenario-tab" data-scenario="E">Scenario E</button>
               </div>
               <div class="summary-grid">
-                <label class="field-inline"><span>Net STCG (USD)</span><input id="sum-stcg" type="number" step="1" /></label>
-                <label class="field-inline"><span>Net LTCG (USD)</span><input id="sum-ltcg" type="number" step="1" /></label>
+                <label class="field-inline"><span>Short-term gains / losses (USD)</span><input id="sum-stcg" type="number" step="1" /></label>
+                <label class="field-inline"><span>Long-term gains / losses (USD)</span><input id="sum-ltcg" type="number" step="1" /></label>
                 <label class="field-inline"><span>Total dividends (USD)</span><input id="sum-dividends" type="number" step="1" /></label>
-                <label class="field-inline"><span>Qualified dividends (USD, blank = US-source)</span><input id="sum-qualified-dividends" type="number" step="1" /></label>
+                <label class="field-inline"><span>Dividends taxed at lower rates (USD, blank = US-source)</span><input id="sum-qualified-dividends" type="number" step="1" /></label>
                 <label class="field-inline"><span>Interest (USD)</span><input id="sum-interest" type="number" step="1" /></label>
                 <label class="field-inline"><span>Other ordinary income (USD)</span><input id="sum-other" type="number" step="1" /></label>
+                <label class="field-inline"><span>Expenses tied to investing (USD)</span><input id="sum-investment-expenses" type="number" step="1" /></label>
                 <label class="field-inline"><span>Itemized taxes / SALT (USD)</span><input id="sum-itemized-taxes" type="number" step="1" /></label>
                 <label class="field-inline"><span>Itemized interest (USD)</span><input id="sum-itemized-interest" type="number" step="1" /></label>
                 <label class="field-inline"><span>Other itemized deductions (USD)</span><input id="sum-itemized-other" type="number" step="1" /></label>
-                <label class="field-inline"><span>US-source STCG (USD)</span><input id="sum-us-stcg" type="number" step="1" /></label>
-                <label class="field-inline"><span>US-source LTCG (USD)</span><input id="sum-us-ltcg" type="number" step="1" /></label>
+                <label class="field-inline"><span>US-source short-term gains / losses (USD)</span><input id="sum-us-stcg" type="number" step="1" /></label>
+                <label class="field-inline"><span>US-source long-term gains / losses (USD)</span><input id="sum-us-ltcg" type="number" step="1" /></label>
                 <label class="field-inline"><span>US-source dividends (USD)</span><input id="sum-us-dividends" type="number" step="1" /></label>
                 <label class="field-inline"><span>US-source interest (USD)</span><input id="sum-us-interest" type="number" step="1" /></label>
                 <label class="field-inline"><span>US-source other income (USD)</span><input id="sum-us-other" type="number" step="1" /></label>
@@ -116,8 +117,9 @@
                 <label class="field-inline"><span>Standard deduction (USD)</span><input id="sum-std-ded" type="number" step="1" /></label>
                 <label class="field-inline"><span>NIIT threshold MFJ (USD)</span><input id="sum-niit-threshold" type="number" step="1" /></label>
                 <label class="field-inline"><span>Capital loss deduction cap (USD)</span><input id="sum-caploss-cap" type="number" step="1" /></label>
+                <label class="field-inline"><span>Tax-free bond interest that counts for AMT (USD)</span><input id="sum-amt-bond-interest" type="number" step="1" /></label>
                 <label class="field-inline"><span>Other AMT adjustments / preferences (USD)</span><input id="sum-amt-adjustments" type="number" step="1" /></label>
-                <label class="field-inline"><span>AMT foreign tax credit (USD)</span><input id="sum-amt-ftc" type="number" step="1" /></label>
+                <label class="field-inline"><span>Minimum-tax foreign tax credit (USD)</span><input id="sum-amt-ftc" type="number" step="1" /></label>
                 <label class="field-inline"><span>Other taxes besides NIIT (USD)</span><input id="sum-other-taxes" type="number" step="1" /></label>
                 <label class="field-inline"><span>Federal withholding (USD)</span><input id="sum-withholding" type="number" step="1" /></label>
                 <label class="field-inline"><span>Other payments / refundable credits (USD)</span><input id="sum-other-payments" type="number" step="1" /></label>
@@ -213,6 +215,6 @@
     </div>
 
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="./app.js?v=20260324f"></script>
+    <script src="./app.js?v=20260324g"></script>
   </body>
 </html>

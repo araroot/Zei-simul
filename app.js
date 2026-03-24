@@ -51,6 +51,7 @@ const SUMMARY_BASE_SCENARIO_B = {
   qualifiedDividends: 2479,
   interest: 22849,
   other: 101597,
+  investmentExpenses: 6467,
   itemizedTaxes: 10000,
   itemizedInterest: 26878,
   itemizedOther: 0,
@@ -65,6 +66,7 @@ const SUMMARY_BASE_SCENARIO_B = {
   stdDeduction: 31500,
   niitThreshold: 250000,
   capLossCap: 3000,
+  amtBondInterest: 0,
   amtAdjustments: 0,
   amtFtc: 0,
   otherTaxes: 0,
@@ -193,6 +195,7 @@ const sumInputs = {
   qualifiedDividends: document.getElementById("sum-qualified-dividends"),
   interest: document.getElementById("sum-interest"),
   other: document.getElementById("sum-other"),
+  investmentExpenses: document.getElementById("sum-investment-expenses"),
   itemizedTaxes: document.getElementById("sum-itemized-taxes"),
   itemizedInterest: document.getElementById("sum-itemized-interest"),
   itemizedOther: document.getElementById("sum-itemized-other"),
@@ -207,6 +210,7 @@ const sumInputs = {
   stdDed: document.getElementById("sum-std-ded"),
   niitThreshold: document.getElementById("sum-niit-threshold"),
   capLossCap: document.getElementById("sum-caploss-cap"),
+  amtBondInterest: document.getElementById("sum-amt-bond-interest"),
   amtAdjustments: document.getElementById("sum-amt-adjustments"),
   amtFtc: document.getElementById("sum-amt-ftc"),
   otherTaxes: document.getElementById("sum-other-taxes"),
@@ -334,6 +338,7 @@ function sanitizeSummaryScenario(s) {
   scenario.dividends = Math.max(0, scenario.dividends);
   scenario.interest = Math.max(0, scenario.interest);
   scenario.other = Math.max(0, scenario.other);
+  scenario.investmentExpenses = Math.max(0, Number(scenario.investmentExpenses) || 0);
   scenario.itemizedTaxes = Math.max(0, Number(scenario.itemizedTaxes) || 0);
   scenario.itemizedInterest = Math.max(0, Number(scenario.itemizedInterest) || 0);
   scenario.itemizedOther = Math.max(0, Number(scenario.itemizedOther) || 0);
@@ -343,6 +348,7 @@ function sanitizeSummaryScenario(s) {
   scenario.stdDeduction = Math.max(0, scenario.stdDeduction);
   scenario.niitThreshold = Math.max(0, scenario.niitThreshold);
   scenario.capLossCap = Math.max(0, scenario.capLossCap);
+  scenario.amtBondInterest = Math.max(0, Number(scenario.amtBondInterest) || 0);
   scenario.amtAdjustments = Number(scenario.amtAdjustments) || 0;
   scenario.amtFtc = Math.max(0, Number(scenario.amtFtc) || 0);
   scenario.otherTaxes = Math.max(0, Number(scenario.otherTaxes) || 0);
@@ -381,12 +387,14 @@ function buildSimulatedSummaryScenarios() {
       dividends: base.dividends + randomSignedLargeDelta(rand),
       interest: base.interest + randomSignedLargeDelta(rand),
       other: base.other + randomSignedLargeDelta(rand),
+      investmentExpenses: Math.max(0, base.investmentExpenses + randomInt(rand, -3000, 12000)),
       itemizedTaxes: base.itemizedTaxes,
       itemizedInterest: Math.max(0, base.itemizedInterest + randomInt(rand, -15000, 15000)),
       itemizedOther: Math.max(0, base.itemizedOther + randomInt(rand, 0, 12000)),
       foreignTaxes: base.foreignTaxes + randomSignedLargeDelta(rand),
       ftcCarryover: Math.max(0, base.ftcCarryover + randomInt(rand, 0, 50000)),
       otherCredits: Math.max(0, randomInt(rand, 0, 15000)),
+      amtBondInterest: Math.max(0, randomInt(rand, 0, 10000)),
       amtAdjustments: randomInt(rand, -50000, 150000),
       amtFtc: Math.max(0, randomInt(rand, 0, 50000)),
       otherTaxes: Math.max(0, randomInt(rand, 0, 10000)),
@@ -1133,7 +1141,9 @@ function calculateSummaryTax(inputs) {
   const ltcgBreakdown = calcLtcgTaxBreakdown(taxableOrdinary, taxablePref, LTCG_THRESHOLDS_2025);
   const regularTax = ordinaryTax + ltcgBreakdown.tax;
 
-  const nii = Math.max(0, capNet.ordinaryCapGain + capNet.prefCapGain + inputs.dividends + inputs.interest);
+  const investmentIncomeGross = Math.max(0, capNet.ordinaryCapGain + capNet.prefCapGain + inputs.dividends + inputs.interest);
+  const investmentExpensesUsed = Math.min(investmentIncomeGross, Math.max(0, inputs.investmentExpenses));
+  const nii = Math.max(0, investmentIncomeGross - investmentExpensesUsed);
   const magiExcess = Math.max(0, agi - inputs.niitThreshold);
   const niitBase = Math.min(nii, magiExcess);
   const niit = niitBase * NIIT_RATE;
@@ -1163,7 +1173,7 @@ function calculateSummaryTax(inputs) {
   const amtDeductionAddback = deductionUsed > inputs.stdDeduction
     ? inputs.itemizedTaxes
     : inputs.stdDeduction;
-  const amtBaseIncome = Math.max(0, taxableIncome + amtDeductionAddback + inputs.amtAdjustments);
+  const amtBaseIncome = Math.max(0, taxableIncome + amtDeductionAddback + inputs.amtBondInterest + inputs.amtAdjustments);
   const amtExemptionReduction = Math.max(0, amtBaseIncome - AMT_EXEMPTION_PHASEOUT_2025_MFJ) * 0.25;
   const amtExemption = Math.max(0, AMT_EXEMPTION_2025_MFJ - amtExemptionReduction);
   const amtTaxableIncome = Math.max(0, amtBaseIncome - amtExemption);
@@ -1209,6 +1219,8 @@ function calculateSummaryTax(inputs) {
     ordinaryTax,
     ltcgBreakdown,
     regularTax,
+    investmentIncomeGross,
+    investmentExpensesUsed,
     nii,
     magiExcess,
     niitBase,
@@ -1268,6 +1280,7 @@ function readSummaryInputs() {
     qualifiedDividends,
     interest: parseNumber(sumInputs.interest),
     other: parseNumber(sumInputs.other),
+    investmentExpenses: parseNumber(sumInputs.investmentExpenses),
     itemizedTaxes: parseNumber(sumInputs.itemizedTaxes),
     itemizedInterest: parseNumber(sumInputs.itemizedInterest),
     itemizedOther: parseNumber(sumInputs.itemizedOther),
@@ -1282,6 +1295,7 @@ function readSummaryInputs() {
     stdDeduction: parseNumber(sumInputs.stdDed, 31500),
     niitThreshold: parseNumber(sumInputs.niitThreshold, 250000),
     capLossCap: parseNumber(sumInputs.capLossCap, 3000),
+    amtBondInterest: parseNumber(sumInputs.amtBondInterest),
     amtAdjustments: parseNumber(sumInputs.amtAdjustments),
     amtFtc: parseNumber(sumInputs.amtFtc),
     otherTaxes: parseNumber(sumInputs.otherTaxes),
@@ -1300,6 +1314,7 @@ function readSummaryDraftFromForm() {
     qualifiedDividends: qualifiedRaw === "" ? null : parseNumber(sumInputs.qualifiedDividends),
     interest: parseNumber(sumInputs.interest),
     other: parseNumber(sumInputs.other),
+    investmentExpenses: parseNumber(sumInputs.investmentExpenses),
     itemizedTaxes: parseNumber(sumInputs.itemizedTaxes),
     itemizedInterest: parseNumber(sumInputs.itemizedInterest),
     itemizedOther: parseNumber(sumInputs.itemizedOther),
@@ -1314,6 +1329,7 @@ function readSummaryDraftFromForm() {
     stdDeduction: parseNumber(sumInputs.stdDed, 31500),
     niitThreshold: parseNumber(sumInputs.niitThreshold, 250000),
     capLossCap: parseNumber(sumInputs.capLossCap, 3000),
+    amtBondInterest: parseNumber(sumInputs.amtBondInterest),
     amtAdjustments: parseNumber(sumInputs.amtAdjustments),
     amtFtc: parseNumber(sumInputs.amtFtc),
     otherTaxes: parseNumber(sumInputs.otherTaxes),
@@ -1330,6 +1346,7 @@ function writeSummaryScenarioToForm(values) {
   sumInputs.qualifiedDividends.value = values.qualifiedDividends === null ? "" : String(Math.round(values.qualifiedDividends));
   sumInputs.interest.value = String(Math.round(values.interest));
   sumInputs.other.value = String(Math.round(values.other));
+  sumInputs.investmentExpenses.value = String(Math.round(values.investmentExpenses));
   sumInputs.itemizedTaxes.value = String(Math.round(values.itemizedTaxes));
   sumInputs.itemizedInterest.value = String(Math.round(values.itemizedInterest));
   sumInputs.itemizedOther.value = String(Math.round(values.itemizedOther));
@@ -1344,6 +1361,7 @@ function writeSummaryScenarioToForm(values) {
   sumInputs.stdDed.value = String(Math.round(values.stdDeduction));
   sumInputs.niitThreshold.value = String(Math.round(values.niitThreshold));
   sumInputs.capLossCap.value = String(Math.round(values.capLossCap));
+  sumInputs.amtBondInterest.value = String(Math.round(values.amtBondInterest));
   sumInputs.amtAdjustments.value = String(Math.round(values.amtAdjustments));
   sumInputs.amtFtc.value = String(Math.round(values.amtFtc));
   sumInputs.otherTaxes.value = String(Math.round(values.otherTaxes));
@@ -1401,18 +1419,19 @@ function renderSummaryAssumptions() {
   if (!sumAssumptions) return;
   const assumptions = [
     "Tax year is treated as 2025 MFJ for this tab (2025 brackets and LTCG thresholds).",
-    "Qualified dividends default to US-source dividends when the input is left blank.",
+    "Dividends taxed at lower rates default to US-source dividends when the input is left blank.",
     "The calculator now follows a Form 1040-style waterfall: regular tax, AMT, credits, other taxes, payments, and amount due / refund.",
     "The larger of itemized deductions or the standard deduction is used for regular tax.",
     "AMT is modeled with the 2025 MFJ exemption, phaseout, and 26% / 28% rates; capital gains and qualified dividends keep preferential rates.",
     "AMT adds back SALT if itemized deductions are used. Other AMT adjustments / preferences are user inputs.",
+    "Tax-free bond interest that counts for AMT is a separate input because it can raise minimum tax even when it is not part of regular taxable income.",
     "AMT foreign tax credit is a separate user input. If left at 0, AMT may be overstated relative to a prepared return.",
     "FTC is applied only against regular tax (not NIIT) using a proportional limitation approximation.",
     "Foreign-source income is derived from total minus US-source components by category.",
     "Foreign taxable income for FTC limit is approximated by proportional allocation: taxable income × (foreign gross / worldwide gross).",
     "NIIT is placed in Other Taxes, not inside regular tax, and is not reduced by FTC.",
     "NIIT uses MAGI ≈ AGI assumption in this model.",
-    "Investment income for NIIT is approximated as net capital gains + dividends + interest.",
+    "Investment income for NIIT starts with net capital gains + dividends + interest, then subtracts the input field for expenses tied to investing.",
     "APTC / Form 8962 and other uncommon Schedule 2 / Schedule 3 items are included only if entered manually in the generic input fields."
   ];
   sumAssumptions.innerHTML = assumptions.map((a) => `<li>${a}</li>`).join("");
@@ -1427,7 +1446,10 @@ function renderSummaryOutput(result) {
         ["Wages, salaries, tips, etc.", toMoney(0), "Not separately modeled in this workbook-derived scenario set"],
         ["Interest income", toMoney(result.inputs.interest), "Input amount"],
         ["Dividend income", toMoney(result.inputs.dividends), "Ordinary + qualified dividends"],
+        ["Dividends taxed at lower rates", toMoney(result.qualifiedDividends), "These are the dividends that use the lower capital-gains tax rates"],
         ["Capital gain or loss", toMoney(result.capNet.ordinaryCapGain + result.capNet.prefCapGain - result.capNet.capLossDeduction), "Net capital result after current-year loss deduction"],
+        ["Short-term gains / losses", toMoney(result.inputs.stcg), "Used in ordinary-income tax brackets"],
+        ["Long-term gains / losses", toMoney(result.inputs.ltcg), "Used in lower capital-gains tax rates"],
         ["Other income", toMoney(result.inputs.other), "Residual ordinary income input"],
         ["Total income", toMoney(result.totalIncome), "STCG + LTCG + dividends + interest + other"],
         ["Adjustments to income", toMoney(0), "No above-the-line adjustments modeled"],
@@ -1499,6 +1521,7 @@ function renderSummaryOutput(result) {
         ["LTCG taxed at 15%", toMoney(result.ltcgBreakdown.atFifteen), "Regular tax stacking bucket"],
         ["LTCG taxed at 20%", toMoney(result.ltcgBreakdown.atTwenty), "Regular tax stacking bucket"],
         ["AMT exemption used", toMoney(result.amtExemption), "2025 MFJ exemption after phaseout"],
+        ["AMT bond-interest addback", toMoney(result.inputs.amtBondInterest), "Tax-free bond interest that still counts for AMT"],
         ["AMT taxable income", toMoney(result.amtTaxableIncome), "AMTI after exemption"],
         ["AMT taxable ordinary income", toMoney(result.amtTaxableOrdinary), "AMTI ordinary portion after exemption"],
         ["Derived foreign gross income", toMoney(result.foreignIncomeDerived), "FTC numerator on gross basis"],
@@ -1507,7 +1530,9 @@ function renderSummaryOutput(result) {
         ["Approx foreign taxable income", toMoney(result.foreignTaxableIncomeApprox), "Taxable income × foreign gross / worldwide gross"],
         ["FTC limit", toMoney(result.ftcLimit), "Regular tax × foreign taxable income ratio"],
         ["FTC available", toMoney(result.ftcAvailable), "Foreign taxes + carryover input"],
-        ["NII used for NIIT", toMoney(result.nii), "Simplified NII"],
+        ["Investment income before expenses", toMoney(result.investmentIncomeGross), "Interest + dividends + net gains before investment expenses"],
+        ["Expenses tied to investing used", toMoney(result.investmentExpensesUsed), "Reduces net investment income for NIIT"],
+        ["NII used for NIIT", toMoney(result.nii), "Net investment income after expenses"],
         ["MAGI excess over NIIT threshold", toMoney(result.magiExcess), "AGI - NIIT threshold"],
         ["Effective tax rate", toPercent(result.effectiveRate), "Total tax / total income"],
         ["After-tax income", toMoney(result.afterTaxIncome), "Total income - total tax"]
