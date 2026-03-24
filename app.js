@@ -302,6 +302,9 @@ const builderInputs = {
 };
 
 const builderRecalcBtn = document.getElementById("builder-recalc");
+const builderRecalcBottomBtn = document.getElementById("builder-recalc-bottom");
+const builderResetBtn = document.getElementById("builder-reset");
+const builderResetBottomBtn = document.getElementById("builder-reset-bottom");
 const builderBridgeOutput = document.getElementById("builder-bridge-output");
 const builder1040Output = document.getElementById("builder-1040-output");
 const builderAmtOutput = document.getElementById("builder-amt-output");
@@ -309,6 +312,15 @@ const builderNiitOutput = document.getElementById("builder-niit-output");
 const builder1116PassiveOutput = document.getElementById("builder-1116-passive-output");
 const builder1116GeneralOutput = document.getElementById("builder-1116-general-output");
 const builderAssumptions = document.getElementById("builder-assumptions");
+const builderMetricUsIncome = document.getElementById("builder-metric-us-income");
+const builderMetricForeignPassive = document.getElementById("builder-metric-foreign-passive");
+const builderMetricForeignGeneral = document.getElementById("builder-metric-foreign-general");
+const builderMetricDeductions = document.getElementById("builder-metric-deductions");
+const builderMetricFtc = document.getElementById("builder-metric-ftc");
+const builderMetricAmt = document.getElementById("builder-metric-amt");
+const builderMetricTotalTax = document.getElementById("builder-metric-total-tax");
+const builderMetricBalance = document.getElementById("builder-metric-balance");
+const builderMetricBalanceNote = document.getElementById("builder-metric-balance-note");
 
 const DEFAULT_BUILDER_INPUTS = {
   wagesUs: 0,
@@ -2259,6 +2271,44 @@ function renderBuilderAssumptions() {
   builderAssumptions.innerHTML = assumptions.map((item) => `<li>${item}</li>`).join("");
 }
 
+function updateBuilderMetrics(builder, result) {
+  if (!builderMetricUsIncome) return;
+
+  const usIncome = grossPositive(
+    builder.wagesUs,
+    builder.interestUs,
+    builder.dividendsUs,
+    builder.stcgUs,
+    builder.ltcgUs,
+    builder.otherUs
+  );
+  const foreignPassive = grossPositive(
+    builder.interestForeign,
+    builder.dividendsForeign,
+    builder.stcgForeign,
+    builder.ltcgForeign,
+    builder.foreignPassiveOther
+  );
+  const foreignGeneral = grossPositive(builder.foreignGeneralIncome);
+  const deductions = builder.salt + builder.mortgageInterest + builder.otherItemized;
+
+  builderMetricUsIncome.textContent = toMoney(usIncome);
+  builderMetricForeignPassive.textContent = toMoney(foreignPassive);
+  builderMetricForeignGeneral.textContent = toMoney(foreignGeneral);
+  builderMetricDeductions.textContent = toMoney(deductions);
+  builderMetricFtc.textContent = toMoney(result.ftcAllowed);
+  builderMetricAmt.textContent = toMoney(result.amt);
+  builderMetricTotalTax.textContent = toMoney(result.totalTax);
+
+  if (result.refund > 0) {
+    builderMetricBalance.textContent = toMoney(result.refund);
+    builderMetricBalanceNote.textContent = "Refund after total tax, payments, and penalty";
+  } else {
+    builderMetricBalance.textContent = toMoney(result.amountOwed);
+    builderMetricBalanceNote.textContent = "Amount due after total tax, payments, and penalty";
+  }
+}
+
 function recalcBuilder() {
   if (!builder1040Output) return;
   const builder = readBuilderInputs();
@@ -2275,6 +2325,7 @@ function recalcBuilder() {
   renderRows(builder1116PassiveOutput, getBuilder1116Rows(builder, result, "passive"));
   renderRows(builder1116GeneralOutput, getBuilder1116Rows(builder, result, "general"));
   renderBuilderAssumptions();
+  updateBuilderMetrics(builder, result);
 }
 
 function seedBuilderDefaults() {
@@ -2283,12 +2334,30 @@ function seedBuilderDefaults() {
   writeBuilderInputs(state.builder.inputs);
 }
 
+function resetBuilder() {
+  seedBuilderDefaults();
+  recalcBuilder();
+}
+
 function bindBuilderEvents() {
   if (!builderRecalcBtn) return;
   builderRecalcBtn.addEventListener("click", recalcBuilder);
+  if (builderRecalcBottomBtn) {
+    builderRecalcBottomBtn.addEventListener("click", recalcBuilder);
+  }
+  if (builderResetBtn) {
+    builderResetBtn.addEventListener("click", resetBuilder);
+  }
+  if (builderResetBottomBtn) {
+    builderResetBottomBtn.addEventListener("click", resetBuilder);
+  }
   Object.values(builderInputs).forEach((input) => {
     if (!input) return;
+    input.placeholder = "0";
     input.addEventListener("change", recalcBuilder);
+    input.addEventListener("focus", () => {
+      input.select?.();
+    });
   });
 }
 
