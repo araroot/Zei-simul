@@ -64,11 +64,15 @@ const SCENARIO_B_WORKBOOK_BREAKOUT = {
   foreignPassiveLtcg: 829971.7403597468,
   foreignPassiveDividends: 19687.617550181907,
   foreignPassiveInterest: 5923.70284507592,
-  foreignGeneralOther: 98614.78341856702,
+  foreignPassiveRetirement: 72467.17087670573,
+  foreignExcludedRefund: 26147.612541861287,
+  foreignGeneralOther: 0,
   passiveTaxesCapitalGains: 129950.56981855325,
   passiveTaxesDividends: 4107.95794934181,
   passiveTaxesInterest: 1846.1891591016034,
-  generalTaxesOther: 7525.633227364062,
+  passiveTaxesRetirement: 7246.7147923289685,
+  excludedRefundTaxes: 278.91843503609427,
+  generalTaxesOther: 0,
   totalForeignTaxes: 143430.35015436172
 };
 
@@ -281,18 +285,18 @@ function defaultForm1116ForScenario(id, scenario) {
       ssn: "",
       category: "passive",
       country: "India",
-      method: "",
+      method: "accrued",
       carryover: 0,
       carryback: 0,
       foreignQualifiedDividends: 0,
       line2: 0,
-      line3a: 0,
+      line3a: 20000,
       line3b: 0,
       line3c: 0,
       line3d: 0,
       line3e: 0,
       line3f: 0,
-      line4a: 0,
+      line4a: 16500,
       line4b: 0,
       line5: 0
     };
@@ -354,10 +358,12 @@ function derive1116Data(scenarioId, scenarioInputs, form1116) {
     const passiveGross = SCENARIO_B_WORKBOOK_BREAKOUT.foreignPassiveStcg
       + SCENARIO_B_WORKBOOK_BREAKOUT.foreignPassiveLtcg
       + SCENARIO_B_WORKBOOK_BREAKOUT.foreignPassiveDividends
-      + SCENARIO_B_WORKBOOK_BREAKOUT.foreignPassiveInterest;
+      + SCENARIO_B_WORKBOOK_BREAKOUT.foreignPassiveInterest
+      + SCENARIO_B_WORKBOOK_BREAKOUT.foreignPassiveRetirement;
     const passiveTaxes = SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesCapitalGains
       + SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesDividends
-      + SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesInterest;
+      + SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesInterest
+      + SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesRetirement;
 
     const categoryGross = form1116.category === "general"
       ? SCENARIO_B_WORKBOOK_BREAKOUT.foreignGeneralOther
@@ -372,7 +378,7 @@ function derive1116Data(scenarioId, scenarioInputs, form1116) {
       : {
           dividends: SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesDividends,
           interest: SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesInterest,
-          other: SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesCapitalGains,
+          other: SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesCapitalGains + SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesRetirement,
           total: passiveTaxes
         };
 
@@ -389,12 +395,10 @@ function derive1116Data(scenarioId, scenarioInputs, form1116) {
       needsCapitalGainWorksheet: form1116.category === "passive",
       unresolvedQuestions: form1116.category === "general"
         ? [
-            "Confirm whether EPF withdrawal belongs in general category income on a separate Form 1116.",
-            "Confirm whether the India tax refund is foreign-source taxable income for Form 1116 category purposes."
+            "General category is currently zero for Scenario B because EPF was moved to passive and the India tax refund is excluded."
           ]
         : [
-            "Passive category includes foreign capital gains, so the qualified-dividend / capital-gain adjustment worksheets must be completed exactly.",
-            "If you want the PDF to be submission-ready, confirm whether foreign taxes are claimed as paid or accrued."
+            "Passive category includes foreign capital gains, so the qualified-dividend / capital-gain adjustment worksheets still need exact line-12 and line-16 treatment in the PDF export."
           ]
     };
   }
@@ -1109,8 +1113,6 @@ function bindSummaryEvents() {
       const derived = derive1116Data(scenarioId, scenarioInputs, form1116);
       const missing = [];
 
-      if (!form1116.name) missing.push("taxpayer name");
-      if (!form1116.ssn) missing.push("taxpayer SSN/TIN");
       if (!form1116.country) missing.push("country");
       if (!form1116.method) missing.push("paid vs accrued election");
 
