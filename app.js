@@ -375,6 +375,9 @@ const builderInputs = {
 
 const builderRecalcBtn = document.getElementById("builder-recalc");
 const builderRecalcBottomBtn = document.getElementById("builder-recalc-bottom");
+const builderImportCsvInput = document.getElementById("builder-import-csv");
+const builderImportCsvBtn = document.getElementById("builder-import-csv-btn");
+const builderImportCsvBottomBtn = document.getElementById("builder-import-csv-btn-bottom");
 const builderResetBtn = document.getElementById("builder-reset");
 const builderResetBottomBtn = document.getElementById("builder-reset-bottom");
 const builderGeneratePdfBtn = document.getElementById("builder-generate-pdf");
@@ -2040,6 +2043,127 @@ function writeBuilderInputs(values) {
   });
 }
 
+function parseSimpleCsv(text) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === "\"") {
+      if (inQuotes && next === "\"") {
+        field += "\"";
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === "," && !inQuotes) {
+      row.push(field);
+      field = "";
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") i += 1;
+      row.push(field);
+      field = "";
+      if (row.some((value) => value !== "")) rows.push(row);
+      row = [];
+    } else {
+      field += char;
+    }
+  }
+
+  row.push(field);
+  if (row.some((value) => value !== "")) rows.push(row);
+  return rows;
+}
+
+function builderValuesFromCsvRows(rows) {
+  if (!rows.length) {
+    throw new Error("CSV file is empty.");
+  }
+
+  const header = rows[0].map((value) => value.trim().toLowerCase());
+  const fieldIndex = header.indexOf("field");
+  const valueIndex = header.indexOf("value");
+
+  if (fieldIndex === -1 || valueIndex === -1) {
+    throw new Error("CSV must include 'field' and 'value' columns.");
+  }
+
+  const raw = {};
+  for (const row of rows.slice(1)) {
+    const fieldName = (row[fieldIndex] || "").trim();
+    if (!fieldName) continue;
+    raw[fieldName] = (row[valueIndex] || "").trim();
+  }
+
+  const numberOrZero = (key) => {
+    const n = Number(raw[key] ?? "");
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  return sanitizeBuilderInputs({
+    wagesUs: numberOrZero("w2_wages_us"),
+    interestUs: numberOrZero("interest_us"),
+    dividendsUs: numberOrZero("dividends_us"),
+    qualifiedDividendsUs: numberOrZero("qualified_dividends_us"),
+    stGainUs: numberOrZero("st_sale_profits_us"),
+    stLossUs: numberOrZero("st_sale_losses_us"),
+    ltGainUs: numberOrZero("lt_sale_profits_us"),
+    ltLossUs: numberOrZero("lt_sale_losses_us"),
+    otherUs: numberOrZero("other_ordinary_income_us"),
+    interestForeign: numberOrZero("interest_foreign"),
+    dividendsForeign: numberOrZero("dividends_foreign"),
+    qualifiedDividendsForeign: numberOrZero("qualified_dividends_foreign"),
+    stGainForeign: numberOrZero("st_sale_profits_foreign"),
+    stLossForeign: numberOrZero("st_sale_losses_foreign"),
+    ltGainForeign: numberOrZero("lt_sale_profits_foreign"),
+    ltLossForeign: numberOrZero("lt_sale_losses_foreign"),
+    foreignPassiveOther: numberOrZero("retirement_annuity_epf_foreign"),
+    foreignGeneralIncome: numberOrZero("foreign_general_income"),
+    foreignExcludedIncome: numberOrZero("excluded_foreign_income_refund"),
+    salt: numberOrZero("salt"),
+    mortgageInterest: numberOrZero("mortgage_interest"),
+    otherItemized: numberOrZero("other_itemized_deductions"),
+    investmentExpenses: numberOrZero("investment_expenses"),
+    directPassiveDeductions: numberOrZero("direct_passive_expenses"),
+    directGeneralDeductions: numberOrZero("direct_general_expenses"),
+    amtBondInterest: numberOrZero("amt_bond_interest"),
+    amtAdjustments: numberOrZero("other_amt_adjustments"),
+    ftaxPassiveGains: numberOrZero("foreign_tax_on_gains"),
+    ftaxPassiveDividends: numberOrZero("foreign_tax_on_dividends"),
+    ftaxPassiveInterest: numberOrZero("foreign_tax_on_interest"),
+    ftaxPassiveOther: numberOrZero("foreign_tax_on_retirement_epf"),
+    ftaxGeneral: numberOrZero("foreign_tax_on_general_income"),
+    ftcCarryPassive: numberOrZero("ftc_carryover_passive"),
+    ftcCarryGeneral: numberOrZero("ftc_carryover_general"),
+    amtFtc: numberOrZero("amt_foreign_tax_credit"),
+    otherCredits: numberOrZero("other_nonrefundable_credits"),
+    otherTaxes: numberOrZero("other_taxes_besides_niit"),
+    withholding: numberOrZero("federal_withholding"),
+    otherPayments: numberOrZero("other_payments_refundable_credits"),
+    penalty: numberOrZero("underpayment_penalty"),
+    stdDeduction: numberOrZero("standard_deduction") || 31500,
+    niitThreshold: numberOrZero("niit_threshold") || 250000,
+    capLossCap: numberOrZero("capital_loss_deduction_cap") || 3000
+  });
+}
+
+async function importBuilderCsvFile(file) {
+  if (!file) return;
+  const text = await file.text();
+  const rows = parseSimpleCsv(text);
+  const values = builderValuesFromCsvRows(rows);
+  state.builder.inputs = values;
+  writeBuilderInputs(values);
+  recalcBuilder();
+  if (builderPdfStatus) {
+    builderPdfStatus.textContent = `Imported CSV: ${file.name}`;
+  }
+}
+
 function getPreferentialBucketAllocation(qualifiedDividendsTotal, longTermGainTotal, breakdown) {
   let remainingQualified = Math.max(0, qualifiedDividendsTotal);
   let remainingLongTerm = Math.max(0, longTermGainTotal);
@@ -2531,6 +2655,24 @@ async function generateBuilderCombinedPdf() {
 function bindBuilderEvents() {
   if (!builderRecalcBtn) return;
   builderRecalcBtn.addEventListener("click", recalcBuilder);
+  if (builderImportCsvBtn && builderImportCsvInput) {
+    builderImportCsvBtn.addEventListener("click", () => builderImportCsvInput.click());
+  }
+  if (builderImportCsvBottomBtn && builderImportCsvInput) {
+    builderImportCsvBottomBtn.addEventListener("click", () => builderImportCsvInput.click());
+  }
+  if (builderImportCsvInput) {
+    builderImportCsvInput.addEventListener("change", async (event) => {
+      const [file] = event.target.files || [];
+      try {
+        await importBuilderCsvFile(file);
+      } catch (err) {
+        setBuilderPdfStatus(`CSV import failed: ${err.message || String(err)}`);
+      } finally {
+        builderImportCsvInput.value = "";
+      }
+    });
+  }
   if (builderRecalcBottomBtn) {
     builderRecalcBottomBtn.addEventListener("click", recalcBuilder);
   }

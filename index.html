@@ -328,6 +328,8 @@
                   <p class="hint">Enter source numbers in plain English. This builder rolls them forward into Form 1040, Form 6251, Form 8960, and Form 1116 previews.</p>
                 </div>
                 <div class="builder-top-actions">
+                  <input id="builder-import-csv" type="file" accept=".csv,text/csv" hidden />
+                  <button id="builder-import-csv-btn" class="btn btn-secondary">Import CSV</button>
                   <button id="builder-reset" class="btn btn-secondary">Reset Example</button>
                   <button id="builder-recalc" class="btn">Rebuild Forms</button>
                   <button id="builder-generate-pdf" class="btn">Generate Combined PDF</button>
@@ -470,6 +472,7 @@
               <div class="builder-actionbar">
                 <div class="builder-action-copy">Edit inputs above, then rebuild the return previews below.</div>
                 <div class="builder-top-actions">
+                  <button id="builder-import-csv-btn-bottom" class="btn btn-secondary">Import CSV</button>
                   <button id="builder-reset-bottom" class="btn btn-secondary">Reset Example</button>
                   <button id="builder-recalc-bottom" class="btn">Rebuild Forms</button>
                   <button id="builder-generate-pdf-bottom" class="btn">Generate Combined PDF</button>

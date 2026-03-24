@@ -1,0 +1,49 @@
+field,value,notes
+tax_year,2025,Leave as 2025 unless you want a different year
+filing_status,MFJ,Married filing jointly
+claim_method,accrued,Use paid or accrued
+resident_country,India,Single-country setup for now
+w2_wages_us,0,US W-2 wages
+interest_us,16925.12,US-source interest
+dividends_us,2478.80,Total US dividends
+qualified_dividends_us,,Not available on Summary_2025. Fill if any US dividends get lower rates.
+st_sale_profits_us,0,"Summary_2025 only shows net short-term result, not gross wins vs losses. This is a best-effort placeholder."
+st_sale_losses_us,0,"Summary_2025 only shows net short-term result, not gross wins vs losses. This is a best-effort placeholder."
+lt_sale_profits_us,201183.65,"Summary_2025 only shows net long-term result, not gross wins vs losses. This is a best-effort placeholder."
+lt_sale_losses_us,0,"Summary_2025 only shows net long-term result, not gross wins vs losses. This is a best-effort placeholder."
+other_ordinary_income_us,2982.01,Other US ordinary income
+interest_foreign,5923.70,Foreign-source interest
+dividends_foreign,19687.62,Total foreign dividends
+qualified_dividends_foreign,,Not available on Summary_2025. Fill if any foreign dividends get lower rates.
+st_sale_profits_foreign,0,"Summary_2025 only shows net short-term result, not gross wins vs losses. This is a best-effort placeholder."
+st_sale_losses_foreign,290072.23,"Summary_2025 only shows net short-term result, not gross wins vs losses. This is a best-effort placeholder."
+lt_sale_profits_foreign,829971.74,"Summary_2025 only shows net long-term result, not gross wins vs losses. This is a best-effort placeholder."
+lt_sale_losses_foreign,0,"Summary_2025 only shows net long-term result, not gross wins vs losses. This is a best-effort placeholder."
+retirement_annuity_epf_foreign,72467.17,Foreign retirement or EPF income
+foreign_general_income,0,Foreign general-category income if any
+excluded_foreign_income_refund,26147.61,Foreign income/refund excluded from current return math
+salt,,Not on Summary_2025.
+mortgage_interest,,Not on Summary_2025.
+other_itemized_deductions,0,Other itemized deductions
+investment_expenses,,Not on Summary_2025.
+direct_passive_expenses,0,Expenses directly tied to passive foreign income
+direct_general_expenses,0,Expenses directly tied to general foreign income
+foreign_tax_on_gains,129950.57,Foreign tax paid or accrued on foreign gains
+foreign_tax_on_dividends,4107.96,Foreign tax paid or accrued on foreign dividends
+foreign_tax_on_interest,1846.19,Foreign tax paid or accrued on foreign interest
+foreign_tax_on_retirement_epf,7246.71,Foreign tax paid or accrued on foreign retirement or EPF income
+foreign_tax_on_general_income,0,Foreign tax paid or accrued on general-category income
+ftc_carryover_passive,0.00,Passive basket FTC carryover
+ftc_carryover_general,0,General basket FTC carryover
+amt_bond_interest,0,Tax-exempt bond interest included for AMT
+other_amt_adjustments,0,Other AMT adjustments
+amt_foreign_tax_credit,,Not on Summary_2025.
+other_nonrefundable_credits,0,Credits other than FTC
+other_taxes_besides_niit,0,Other taxes outside NIIT
+federal_withholding,0,Federal tax withheld
+other_payments_refundable_credits,0,Other payments or refundable credits
+underpayment_penalty,0,Estimated tax penalty
+standard_deduction,31500,2025 MFJ standard deduction default
+niit_threshold,250000,2025 MFJ NIIT threshold default
+capital_loss_deduction_cap,3000,Capital loss cap against ordinary income
+notes,"Filled from Summary_2025 where available. Qualified-dividend split, itemized deductions, investment expenses, and AMT FTC were not present on Summary_2025 and still need review. Gross capital fields are placeholders using the net sign because Summary_2025 does not separately show gain and loss transactions.",Optional freeform notes

@@ -1,0 +1,49 @@
+field,value,notes
+tax_year,2025,Leave as 2025 unless you want a different year
+filing_status,MFJ,Married filing jointly
+claim_method,accrued,Use paid or accrued
+resident_country,India,Single-country setup for now
+w2_wages_us,,US W-2 wages
+interest_us,,US-source interest
+dividends_us,,Total US dividends
+qualified_dividends_us,,US dividends taxed at lower rates
+st_sale_profits_us,,Total US short-term sale profits before losses
+st_sale_losses_us,,Total US short-term sale losses
+lt_sale_profits_us,,Total US long-term sale profits before losses
+lt_sale_losses_us,,Total US long-term sale losses
+other_ordinary_income_us,,Other US ordinary income
+interest_foreign,,Foreign-source interest
+dividends_foreign,,Total foreign dividends
+qualified_dividends_foreign,,Foreign dividends taxed at lower rates
+st_sale_profits_foreign,,Total foreign short-term sale profits before losses
+st_sale_losses_foreign,,Total foreign short-term sale losses
+lt_sale_profits_foreign,,Total foreign long-term sale profits before losses
+lt_sale_losses_foreign,,Total foreign long-term sale losses
+retirement_annuity_epf_foreign,,Foreign retirement or EPF income
+foreign_general_income,,Foreign general-category income if any
+excluded_foreign_income_refund,,Foreign income/refund excluded from current return math
+salt,,State and local taxes deducted on Schedule A
+mortgage_interest,,Home mortgage interest deducted on Schedule A
+other_itemized_deductions,,Other itemized deductions
+investment_expenses,,Investment expenses for Form 8960
+direct_passive_expenses,,Expenses directly tied to passive foreign income
+direct_general_expenses,,Expenses directly tied to general foreign income
+foreign_tax_on_gains,,Foreign tax paid or accrued on foreign gains
+foreign_tax_on_dividends,,Foreign tax paid or accrued on foreign dividends
+foreign_tax_on_interest,,Foreign tax paid or accrued on foreign interest
+foreign_tax_on_retirement_epf,,Foreign tax paid or accrued on foreign retirement or EPF income
+foreign_tax_on_general_income,,Foreign tax paid or accrued on general-category income
+ftc_carryover_passive,0,Passive basket FTC carryover
+ftc_carryover_general,0,General basket FTC carryover
+amt_bond_interest,0,Tax-exempt bond interest included for AMT
+other_amt_adjustments,0,Other AMT adjustments
+amt_foreign_tax_credit,0,AMT foreign tax credit
+other_nonrefundable_credits,0,Credits other than FTC
+other_taxes_besides_niit,0,Other taxes outside NIIT
+federal_withholding,0,Federal tax withheld
+other_payments_refundable_credits,0,Other payments or refundable credits
+underpayment_penalty,0,Estimated tax penalty
+standard_deduction,31500,2025 MFJ standard deduction default
+niit_threshold,250000,2025 MFJ NIIT threshold default
+capital_loss_deduction_cap,3000,Capital loss cap against ordinary income
+notes,,Optional freeform notes
