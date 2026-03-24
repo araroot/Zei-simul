@@ -11,7 +11,7 @@
       rel="stylesheet"
     />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20260209d" />
-    <link rel="stylesheet" href="./styles.css?v=20260324a" />
+    <link rel="stylesheet" href="./styles.css?v=20260324b" />
   </head>
   <body>
     <div class="app">
@@ -102,6 +102,9 @@
                 <label class="field-inline"><span>Qualified dividends (USD, blank = US-source)</span><input id="sum-qualified-dividends" type="number" step="1" /></label>
                 <label class="field-inline"><span>Interest (USD)</span><input id="sum-interest" type="number" step="1" /></label>
                 <label class="field-inline"><span>Other ordinary income (USD)</span><input id="sum-other" type="number" step="1" /></label>
+                <label class="field-inline"><span>Itemized taxes / SALT (USD)</span><input id="sum-itemized-taxes" type="number" step="1" /></label>
+                <label class="field-inline"><span>Itemized interest (USD)</span><input id="sum-itemized-interest" type="number" step="1" /></label>
+                <label class="field-inline"><span>Other itemized deductions (USD)</span><input id="sum-itemized-other" type="number" step="1" /></label>
                 <label class="field-inline"><span>US-source STCG (USD)</span><input id="sum-us-stcg" type="number" step="1" /></label>
                 <label class="field-inline"><span>US-source LTCG (USD)</span><input id="sum-us-ltcg" type="number" step="1" /></label>
                 <label class="field-inline"><span>US-source dividends (USD)</span><input id="sum-us-dividends" type="number" step="1" /></label>
@@ -109,9 +112,16 @@
                 <label class="field-inline"><span>US-source other income (USD)</span><input id="sum-us-other" type="number" step="1" /></label>
                 <label class="field-inline"><span>Foreign taxes paid (USD)</span><input id="sum-foreign-taxes" type="number" step="1" /></label>
                 <label class="field-inline"><span>FTC carryover (USD)</span><input id="sum-ftc-carry" type="number" step="1" /></label>
+                <label class="field-inline"><span>Other nonrefundable credits (USD)</span><input id="sum-other-credits" type="number" step="1" /></label>
                 <label class="field-inline"><span>Standard deduction (USD)</span><input id="sum-std-ded" type="number" step="1" /></label>
                 <label class="field-inline"><span>NIIT threshold MFJ (USD)</span><input id="sum-niit-threshold" type="number" step="1" /></label>
                 <label class="field-inline"><span>Capital loss deduction cap (USD)</span><input id="sum-caploss-cap" type="number" step="1" /></label>
+                <label class="field-inline"><span>Other AMT adjustments / preferences (USD)</span><input id="sum-amt-adjustments" type="number" step="1" /></label>
+                <label class="field-inline"><span>AMT foreign tax credit (USD)</span><input id="sum-amt-ftc" type="number" step="1" /></label>
+                <label class="field-inline"><span>Other taxes besides NIIT (USD)</span><input id="sum-other-taxes" type="number" step="1" /></label>
+                <label class="field-inline"><span>Federal withholding (USD)</span><input id="sum-withholding" type="number" step="1" /></label>
+                <label class="field-inline"><span>Other payments / refundable credits (USD)</span><input id="sum-other-payments" type="number" step="1" /></label>
+                <label class="field-inline"><span>Underpayment penalty (USD)</span><input id="sum-penalty" type="number" step="1" /></label>
               </div>
               <div class="actions-row">
                 <button id="sum-recalc" class="btn">Recalculate US Federal Tax</button>
@@ -203,6 +213,6 @@
     </div>
 
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="./app.js?v=20260324e"></script>
+    <script src="./app.js?v=20260324f"></script>
   </body>
 </html>

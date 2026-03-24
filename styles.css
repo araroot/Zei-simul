@@ -293,6 +293,19 @@ th {
   font-weight: 600;
 }
 
+.summary-table tbody tr.summary-section-row,
+.summary-table tbody tr.summary-section-row:hover {
+  background: linear-gradient(90deg, #f0e2c8 0%, #f7efe1 100%);
+}
+
+.summary-table tbody tr.summary-section-row td {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #5d4731;
+  border-top: 1px solid var(--line);
+}
+
 .btn {
   border: none;
   border-radius: 8px;
