@@ -59,6 +59,19 @@ const SUMMARY_BASE_SCENARIO_B = {
   capLossCap: 3000
 };
 
+const SCENARIO_B_WORKBOOK_BREAKOUT = {
+  foreignPassiveStcg: -290072.2324589123,
+  foreignPassiveLtcg: 829971.7403597468,
+  foreignPassiveDividends: 19687.617550181907,
+  foreignPassiveInterest: 5923.70284507592,
+  foreignGeneralOther: 98614.78341856702,
+  passiveTaxesCapitalGains: 129950.56981855325,
+  passiveTaxesDividends: 4107.95794934181,
+  passiveTaxesInterest: 1846.1891591016034,
+  generalTaxesOther: 7525.633227364062,
+  totalForeignTaxes: 143430.35015436172
+};
+
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
@@ -92,9 +105,33 @@ const sumInputs = {
   capLossCap: document.getElementById("sum-caploss-cap")
 };
 
+const sum1116Inputs = {
+  name: document.getElementById("sum1116-name"),
+  ssn: document.getElementById("sum1116-ssn"),
+  category: document.getElementById("sum1116-category"),
+  country: document.getElementById("sum1116-country"),
+  method: document.getElementById("sum1116-method"),
+  carryover: document.getElementById("sum1116-carryover"),
+  carryback: document.getElementById("sum1116-carryback"),
+  foreignQualifiedDividends: document.getElementById("sum1116-foreign-qualified-dividends"),
+  line2: document.getElementById("sum1116-line2"),
+  line3a: document.getElementById("sum1116-line3a"),
+  line3b: document.getElementById("sum1116-line3b"),
+  line3c: document.getElementById("sum1116-line3c"),
+  line3d: document.getElementById("sum1116-line3d"),
+  line3e: document.getElementById("sum1116-line3e"),
+  line3f: document.getElementById("sum1116-line3f"),
+  line4a: document.getElementById("sum1116-line4a"),
+  line4b: document.getElementById("sum1116-line4b"),
+  line5: document.getElementById("sum1116-line5")
+};
+
 const sumRecalcBtn = document.getElementById("sum-recalc");
 const sumAssumptions = document.getElementById("sum-assumptions");
 const sumOutput = document.getElementById("sum-output");
+const sum1116GenerateBtn = document.getElementById("sum1116-generate");
+const sum1116Status = document.getElementById("sum1116-status");
+const sum1116Preview = document.getElementById("sum1116-preview");
 const summaryScenarioTabs = Array.from(document.querySelectorAll("#summary-scenario-tabs .scenario-tab"));
 
 const state = {
@@ -104,7 +141,8 @@ const state = {
   ],
   summary: {
     activeScenario: "A",
-    scenarios: {}
+    scenarios: {},
+    form1116Scenarios: {}
   }
 };
 
@@ -234,6 +272,156 @@ function buildSimulatedSummaryScenarios() {
   }
 
   return scenarios;
+}
+
+function defaultForm1116ForScenario(id, scenario) {
+  if (id === "B") {
+    return {
+      name: "",
+      ssn: "",
+      category: "passive",
+      country: "India",
+      method: "",
+      carryover: 0,
+      carryback: 0,
+      foreignQualifiedDividends: 0,
+      line2: 0,
+      line3a: 0,
+      line3b: 0,
+      line3c: 0,
+      line3d: 0,
+      line3e: 0,
+      line3f: 0,
+      line4a: 0,
+      line4b: 0,
+      line5: 0
+    };
+  }
+
+  return {
+    name: "",
+    ssn: "",
+    category: "passive",
+    country: "India",
+    method: "",
+    carryover: 0,
+    carryback: 0,
+    foreignQualifiedDividends: 0,
+    line2: 0,
+    line3a: 0,
+    line3b: 0,
+    line3c: 0,
+    line3d: 0,
+    line3e: 0,
+    line3f: 0,
+    line4a: 0,
+    line4b: 0,
+    line5: 0
+  };
+}
+
+function sanitizeForm1116(values) {
+  return {
+    name: (values.name || "").trim(),
+    ssn: (values.ssn || "").trim(),
+    category: values.category === "general" ? "general" : "passive",
+    country: (values.country || "").trim(),
+    method: values.method === "paid" || values.method === "accrued" ? values.method : "",
+    carryover: Math.max(0, Number(values.carryover) || 0),
+    carryback: Math.max(0, Number(values.carryback) || 0),
+    foreignQualifiedDividends: Math.max(0, Number(values.foreignQualifiedDividends) || 0),
+    line2: Number(values.line2) || 0,
+    line3a: Number(values.line3a) || 0,
+    line3b: Number(values.line3b) || 0,
+    line3c: Number(values.line3c) || 0,
+    line3d: Number(values.line3d) || 0,
+    line3e: Number(values.line3e) || 0,
+    line3f: Number(values.line3f) || 0,
+    line4a: Number(values.line4a) || 0,
+    line4b: Number(values.line4b) || 0,
+    line5: Number(values.line5) || 0
+  };
+}
+
+function derive1116Data(scenarioId, scenarioInputs, form1116) {
+  const foreignStcg = scenarioInputs.stcg - scenarioInputs.usStcg;
+  const foreignLtcg = scenarioInputs.ltcg - scenarioInputs.usLtcg;
+  const foreignDividends = scenarioInputs.dividends - scenarioInputs.usDividends;
+  const foreignInterest = scenarioInputs.interest - scenarioInputs.usInterest;
+  const foreignOther = scenarioInputs.other - scenarioInputs.usOther;
+
+  if (scenarioId === "B") {
+    const passiveGross = SCENARIO_B_WORKBOOK_BREAKOUT.foreignPassiveStcg
+      + SCENARIO_B_WORKBOOK_BREAKOUT.foreignPassiveLtcg
+      + SCENARIO_B_WORKBOOK_BREAKOUT.foreignPassiveDividends
+      + SCENARIO_B_WORKBOOK_BREAKOUT.foreignPassiveInterest;
+    const passiveTaxes = SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesCapitalGains
+      + SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesDividends
+      + SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesInterest;
+
+    const categoryGross = form1116.category === "general"
+      ? SCENARIO_B_WORKBOOK_BREAKOUT.foreignGeneralOther
+      : passiveGross;
+    const taxesByType = form1116.category === "general"
+      ? {
+          dividends: 0,
+          interest: 0,
+          other: SCENARIO_B_WORKBOOK_BREAKOUT.generalTaxesOther,
+          total: SCENARIO_B_WORKBOOK_BREAKOUT.generalTaxesOther
+        }
+      : {
+          dividends: SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesDividends,
+          interest: SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesInterest,
+          other: SCENARIO_B_WORKBOOK_BREAKOUT.passiveTaxesCapitalGains,
+          total: passiveTaxes
+        };
+
+    return {
+      foreignStcg,
+      foreignLtcg,
+      foreignDividends,
+      foreignInterest,
+      foreignOther,
+      categoryGross,
+      taxesByType,
+      line6: form1116.line2 + form1116.line3a + form1116.line3b + form1116.line3c + form1116.line3d + form1116.line3e + form1116.line3f + form1116.line4a + form1116.line4b + form1116.line5,
+      line7PreAdjustments: categoryGross - (form1116.line2 + form1116.line3a + form1116.line3b + form1116.line3c + form1116.line3d + form1116.line3e + form1116.line3f + form1116.line4a + form1116.line4b + form1116.line5),
+      needsCapitalGainWorksheet: form1116.category === "passive",
+      unresolvedQuestions: form1116.category === "general"
+        ? [
+            "Confirm whether EPF withdrawal belongs in general category income on a separate Form 1116.",
+            "Confirm whether the India tax refund is foreign-source taxable income for Form 1116 category purposes."
+          ]
+        : [
+            "Passive category includes foreign capital gains, so the qualified-dividend / capital-gain adjustment worksheets must be completed exactly.",
+            "If you want the PDF to be submission-ready, confirm whether foreign taxes are claimed as paid or accrued."
+          ]
+    };
+  }
+
+  const passiveGrossApprox = Math.max(0, foreignStcg + foreignLtcg + foreignDividends + foreignInterest);
+  const generalGrossApprox = Math.max(0, foreignOther);
+  const categoryGross = form1116.category === "general" ? generalGrossApprox : passiveGrossApprox;
+  const approxTotalTaxes = Math.max(0, scenarioInputs.foreignTaxes);
+  const taxesByType = form1116.category === "general"
+    ? { dividends: 0, interest: 0, other: approxTotalTaxes, total: approxTotalTaxes }
+    : { dividends: Math.max(0, foreignDividends * 0), interest: Math.max(0, foreignInterest * 0), other: approxTotalTaxes, total: approxTotalTaxes };
+
+  return {
+    foreignStcg,
+    foreignLtcg,
+    foreignDividends,
+    foreignInterest,
+    foreignOther,
+    categoryGross,
+    taxesByType,
+    line6: form1116.line2 + form1116.line3a + form1116.line3b + form1116.line3c + form1116.line3d + form1116.line3e + form1116.line3f + form1116.line4a + form1116.line4b + form1116.line5,
+    line7PreAdjustments: categoryGross - (form1116.line2 + form1116.line3a + form1116.line3b + form1116.line3c + form1116.line3d + form1116.line3e + form1116.line3f + form1116.line4a + form1116.line4b + form1116.line5),
+    needsCapitalGainWorksheet: form1116.category === "passive" && (foreignStcg !== 0 || foreignLtcg !== 0),
+    unresolvedQuestions: [
+      "Scenario B has workbook-level FTC support. Other scenarios still need exact foreign-tax-type sourcing if you want submission-ready PDFs."
+    ]
+  };
 }
 
 function keyFor(income, stPct) {
@@ -674,6 +862,51 @@ function writeSummaryScenarioToForm(values) {
   sumInputs.capLossCap.value = String(Math.round(values.capLossCap));
 }
 
+function readForm1116DraftFromForm() {
+  return sanitizeForm1116({
+    name: sum1116Inputs.name?.value || "",
+    ssn: sum1116Inputs.ssn?.value || "",
+    category: sum1116Inputs.category?.value || "passive",
+    country: sum1116Inputs.country?.value || "",
+    method: sum1116Inputs.method?.value || "",
+    carryover: parseNumber(sum1116Inputs.carryover),
+    carryback: parseNumber(sum1116Inputs.carryback),
+    foreignQualifiedDividends: parseNumber(sum1116Inputs.foreignQualifiedDividends),
+    line2: parseNumber(sum1116Inputs.line2),
+    line3a: parseNumber(sum1116Inputs.line3a),
+    line3b: parseNumber(sum1116Inputs.line3b),
+    line3c: parseNumber(sum1116Inputs.line3c),
+    line3d: parseNumber(sum1116Inputs.line3d),
+    line3e: parseNumber(sum1116Inputs.line3e),
+    line3f: parseNumber(sum1116Inputs.line3f),
+    line4a: parseNumber(sum1116Inputs.line4a),
+    line4b: parseNumber(sum1116Inputs.line4b),
+    line5: parseNumber(sum1116Inputs.line5)
+  });
+}
+
+function writeForm1116ToForm(values) {
+  const safe = sanitizeForm1116(values);
+  sum1116Inputs.name.value = safe.name;
+  sum1116Inputs.ssn.value = safe.ssn;
+  sum1116Inputs.category.value = safe.category;
+  sum1116Inputs.country.value = safe.country;
+  sum1116Inputs.method.value = safe.method;
+  sum1116Inputs.carryover.value = String(Math.round(safe.carryover));
+  sum1116Inputs.carryback.value = String(Math.round(safe.carryback));
+  sum1116Inputs.foreignQualifiedDividends.value = String(Math.round(safe.foreignQualifiedDividends));
+  sum1116Inputs.line2.value = String(Math.round(safe.line2));
+  sum1116Inputs.line3a.value = String(Math.round(safe.line3a));
+  sum1116Inputs.line3b.value = String(Math.round(safe.line3b));
+  sum1116Inputs.line3c.value = String(Math.round(safe.line3c));
+  sum1116Inputs.line3d.value = String(Math.round(safe.line3d));
+  sum1116Inputs.line3e.value = String(Math.round(safe.line3e));
+  sum1116Inputs.line3f.value = String(Math.round(safe.line3f));
+  sum1116Inputs.line4a.value = String(Math.round(safe.line4a));
+  sum1116Inputs.line4b.value = String(Math.round(safe.line4b));
+  sum1116Inputs.line5.value = String(Math.round(safe.line5));
+}
+
 function renderSummaryAssumptions() {
   if (!sumAssumptions) return;
   const assumptions = [
@@ -736,16 +969,63 @@ function renderSummaryOutput(result) {
   sumOutput.innerHTML = rows.map(([k, v, n]) => `<tr><td>${k}</td><td>${v}</td><td>${n}</td></tr>`).join("");
 }
 
+function render1116Status(message) {
+  if (!sum1116Status) return;
+  sum1116Status.textContent = message;
+}
+
+function render1116Preview() {
+  if (!sum1116Preview) return;
+  const scenarioId = state.summary.activeScenario;
+  const scenarioInputs = state.summary.scenarios[scenarioId];
+  const form1116 = state.summary.form1116Scenarios[scenarioId];
+  if (!scenarioInputs || !form1116) {
+    sum1116Preview.innerHTML = `<tr><td>Form 1116</td><td>Not available</td><td>No scenario selected.</td></tr>`;
+    return;
+  }
+
+  const derived = derive1116Data(scenarioId, scenarioInputs, form1116);
+  const rows = [
+    ["Scenario", scenarioId, "Current summary scenario"],
+    ["Category", form1116.category === "general" ? "General category income" : "Passive category income", "Separate Form 1116 required per category"],
+    ["Country", form1116.country || "Missing", "Part I, line i"],
+    ["Claim method", form1116.method || "Missing", "Part II header requires paid or accrued"],
+    ["Foreign ST capital gain", toMoney(derived.foreignStcg), "Scenario-level foreign-source amount"],
+    ["Foreign LT capital gain", toMoney(derived.foreignLtcg), "Scenario-level foreign-source amount"],
+    ["Foreign dividends", toMoney(derived.foreignDividends), "Scenario-level foreign-source amount"],
+    ["Foreign interest", toMoney(derived.foreignInterest), "Scenario-level foreign-source amount"],
+    ["Foreign other income", toMoney(derived.foreignOther), "Needed mainly for general category"],
+    ["Line 1a candidate gross income", toMoney(derived.categoryGross), derived.needsCapitalGainWorksheet ? "Capital-gain / qualified-dividend worksheet still applies" : "Current category gross income"],
+    ["Part II taxes on dividends", toMoney(derived.taxesByType.dividends), "Form 1116 Part II dividend tax bucket"],
+    ["Part II taxes on interest", toMoney(derived.taxesByType.interest), "Form 1116 Part II interest tax bucket"],
+    ["Part II other foreign taxes", toMoney(derived.taxesByType.other), "Capital gains or other category taxes"],
+    ["Part II total foreign taxes", toMoney(derived.taxesByType.total), "Before line 12 reductions"],
+    ["Line 10 carryover + carryback", toMoney(form1116.carryover + form1116.carryback), "Carryover plus carryback into 2025"],
+    ["Line 6 total deductions", toMoney(derived.line6), "Sum of lines 2 through 5 inputs currently entered"],
+    ["Line 7 pre-adjustment amount", toMoney(derived.line7PreAdjustments), "Line 1a minus entered deductions"],
+    ["Blocking items", String(derived.unresolvedQuestions.length), derived.unresolvedQuestions.join(" ")]
+  ];
+
+  sum1116Preview.innerHTML = rows.map(([k, v, n]) => `<tr><td>${k}</td><td>${v}</td><td>${n}</td></tr>`).join("");
+}
+
 function recalcSummary() {
   const inputs = readSummaryInputs();
   const result = calculateSummaryTax(inputs);
   renderSummaryOutput(result);
+  render1116Preview();
 }
 
 function saveActiveSummaryScenario() {
   const activeId = state.summary.activeScenario;
   if (!activeId) return;
   state.summary.scenarios[activeId] = sanitizeSummaryScenario(readSummaryDraftFromForm());
+}
+
+function saveActiveForm1116Scenario() {
+  const activeId = state.summary.activeScenario;
+  if (!activeId) return;
+  state.summary.form1116Scenarios[activeId] = sanitizeForm1116(readForm1116DraftFromForm());
 }
 
 function setActiveSummaryTabButton(id) {
@@ -760,18 +1040,27 @@ function loadSummaryScenario(id) {
   state.summary.activeScenario = id;
   setActiveSummaryTabButton(id);
   writeSummaryScenarioToForm(scenario);
+  if (!state.summary.form1116Scenarios[id]) {
+    state.summary.form1116Scenarios[id] = defaultForm1116ForScenario(id, scenario);
+  }
+  writeForm1116ToForm(state.summary.form1116Scenarios[id]);
+  render1116Status("Form 1116 PDF generation is blocked until the missing filing facts below are confirmed.");
   recalcSummary();
 }
 
 function switchSummaryScenario(id) {
   if (!state.summary.scenarios[id]) return;
   saveActiveSummaryScenario();
+  saveActiveForm1116Scenario();
   loadSummaryScenario(id);
 }
 
 function seedSummaryDefaults() {
   if (!sumInputs.stcg) return;
   state.summary.scenarios = buildSimulatedSummaryScenarios();
+  state.summary.form1116Scenarios = Object.fromEntries(
+    Object.entries(state.summary.scenarios).map(([id, scenario]) => [id, defaultForm1116ForScenario(id, scenario)])
+  );
   loadSummaryScenario("A");
 }
 
@@ -780,6 +1069,7 @@ function bindSummaryEvents() {
 
   sumRecalcBtn.addEventListener("click", () => {
     saveActiveSummaryScenario();
+    saveActiveForm1116Scenario();
     recalcSummary();
   });
 
@@ -795,6 +1085,45 @@ function bindSummaryEvents() {
       saveActiveSummaryScenario();
     });
   });
+
+  Object.values(sum1116Inputs).forEach((input) => {
+    if (!input) return;
+    input.addEventListener("input", () => {
+      saveActiveForm1116Scenario();
+      render1116Preview();
+    });
+    input.addEventListener("change", () => {
+      saveActiveForm1116Scenario();
+      render1116Preview();
+    });
+  });
+
+  if (sum1116GenerateBtn) {
+    sum1116GenerateBtn.addEventListener("click", () => {
+      saveActiveSummaryScenario();
+      saveActiveForm1116Scenario();
+
+      const scenarioId = state.summary.activeScenario;
+      const scenarioInputs = state.summary.scenarios[scenarioId];
+      const form1116 = state.summary.form1116Scenarios[scenarioId];
+      const derived = derive1116Data(scenarioId, scenarioInputs, form1116);
+      const missing = [];
+
+      if (!form1116.name) missing.push("taxpayer name");
+      if (!form1116.ssn) missing.push("taxpayer SSN/TIN");
+      if (!form1116.country) missing.push("country");
+      if (!form1116.method) missing.push("paid vs accrued election");
+
+      if (missing.length) {
+        render1116Status(`Need ${missing.join(", ")} before an exact IRS Form 1116 PDF can be generated for Scenario ${scenarioId}.`);
+        return;
+      }
+
+      render1116Status(
+        `Scenario ${scenarioId} Form 1116 PDF is not being generated yet. Remaining blocking items: ${derived.unresolvedQuestions.join(" ")}`
+      );
+    });
+  }
 }
 
 function bindTopTabs() {

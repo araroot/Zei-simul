@@ -11,7 +11,7 @@
       rel="stylesheet"
     />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20260209d" />
-    <link rel="stylesheet" href="./styles.css?v=20260226f" />
+    <link rel="stylesheet" href="./styles.css?v=20260324a" />
   </head>
   <body>
     <div class="app">
@@ -124,6 +124,65 @@
             </section>
 
             <section class="card">
+              <h2>Form 1116 Setup</h2>
+              <p class="hint">Scenario-specific FTC intake for the official 2025 IRS Form 1116. Start with Scenario B, then reuse the same structure for A, C, D, and E.</p>
+              <div class="summary-grid">
+                <label class="field-inline"><span>Taxpayer name</span><input id="sum1116-name" type="text" /></label>
+                <label class="field-inline"><span>Taxpayer SSN / TIN</span><input id="sum1116-ssn" type="text" /></label>
+                <label class="field-inline">
+                  <span>Separate category</span>
+                  <select id="sum1116-category">
+                    <option value="passive">Passive category income</option>
+                    <option value="general">General category income</option>
+                  </select>
+                </label>
+                <label class="field-inline"><span>Country</span><input id="sum1116-country" type="text" /></label>
+                <label class="field-inline">
+                  <span>Foreign taxes claimed as</span>
+                  <select id="sum1116-method">
+                    <option value="">Select</option>
+                    <option value="paid">Paid</option>
+                    <option value="accrued">Accrued</option>
+                  </select>
+                </label>
+                <label class="field-inline"><span>Carryover into 2025</span><input id="sum1116-carryover" type="number" step="1" /></label>
+                <label class="field-inline"><span>Carryback into 2025</span><input id="sum1116-carryback" type="number" step="1" /></label>
+                <label class="field-inline"><span>Foreign qualified dividends</span><input id="sum1116-foreign-qualified-dividends" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 2 deductions definitely related</span><input id="sum1116-line2" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 3a expense allocable to gross income</span><input id="sum1116-line3a" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 3b definitely related deductions</span><input id="sum1116-line3b" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 3c other deductions definitely related</span><input id="sum1116-line3c" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 3d apportioned deductions</span><input id="sum1116-line3d" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 3e apportioned losses / adjustments</span><input id="sum1116-line3e" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 3f other not definitely related deductions</span><input id="sum1116-line3f" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 4a home mortgage interest allocable</span><input id="sum1116-line4a" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 4b other interest expense allocable</span><input id="sum1116-line4b" type="number" step="1" /></label>
+                <label class="field-inline"><span>Line 5 losses from foreign sources</span><input id="sum1116-line5" type="number" step="1" /></label>
+              </div>
+              <div class="actions-row">
+                <button id="sum1116-generate" class="btn">Generate Form 1116 PDF</button>
+              </div>
+              <div id="sum1116-status" class="status-box"></div>
+            </section>
+
+            <section class="card">
+              <h2>Form 1116 Preview</h2>
+              <p class="hint">Line-by-line preview from currently known Scenario data. This will become the source for the PDF once the remaining filing facts are confirmed.</p>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Form 1116 item</th>
+                      <th>Value</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sum1116-preview"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
               <h2>US Federal Tax Workup</h2>
               <div class="table-wrap">
                 <table class="summary-table">
@@ -143,6 +202,6 @@
       </main>
     </div>
 
-    <script src="./app.js?v=20260226g"></script>
+    <script src="./app.js?v=20260324a"></script>
   </body>
 </html>
