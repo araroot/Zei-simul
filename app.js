@@ -978,6 +978,18 @@ function render1116Status(message) {
   sum1116Status.textContent = message;
 }
 
+function format1116BlockingMessage(derived) {
+  if (!derived.unresolvedQuestions.length) {
+    return "Form 1116 PDF generation can proceed.";
+  }
+
+  if (derived.needsCapitalGainWorksheet) {
+    return "The remaining blocker is internal IRS worksheet math for foreign capital gains. You do not need to provide more input for that specific item.";
+  }
+
+  return `Remaining blocker: ${derived.unresolvedQuestions.join(" ")}`;
+}
+
 function render1116Preview() {
   if (!sum1116Preview) return;
   const scenarioId = state.summary.activeScenario;
@@ -1121,9 +1133,7 @@ function bindSummaryEvents() {
         return;
       }
 
-      render1116Status(
-        `Scenario ${scenarioId} Form 1116 PDF is not being generated yet. Remaining blocking items: ${derived.unresolvedQuestions.join(" ")}`
-      );
+      render1116Status(`Scenario ${scenarioId} Form 1116 PDF is not being generated yet. ${format1116BlockingMessage(derived)}`);
     });
   }
 }
