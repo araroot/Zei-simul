@@ -1448,13 +1448,13 @@ function renderSummaryOutput(result) {
         ["Wages, salaries, tips, etc.", toMoney(0), "Not separately modeled in this workbook-derived scenario set"],
         ["Interest income", toMoney(result.inputs.interest), "Input amount"],
         ["Dividend income", toMoney(result.inputs.dividends), "Ordinary + qualified dividends"],
-        ["Dividends taxed at lower rates", toMoney(result.qualifiedDividends), "These are the dividends that use the lower capital-gains tax rates"],
+        ["Qualified dividends", toMoney(result.qualifiedDividends), "These are the dividends that use the lower capital-gains tax rates"],
         ["Capital gain or loss", toMoney(result.capNet.ordinaryCapGain + result.capNet.prefCapGain - result.capNet.capLossDeduction), "Net capital result after current-year loss deduction"],
-        ["Short-term gains / losses", toMoney(result.inputs.stcg), "Used in ordinary-income tax brackets"],
-        ["Long-term gains / losses", toMoney(result.inputs.ltcg), "Used in lower capital-gains tax rates"],
+        ["Short-term capital gain or loss", toMoney(result.inputs.stcg), "Used in ordinary-income tax brackets"],
+        ["Long-term capital gain or loss", toMoney(result.inputs.ltcg), "Used in lower capital-gains tax rates"],
         ["Other income", toMoney(result.inputs.other), "Residual ordinary income input"],
         ["Total income", toMoney(result.totalIncome), "STCG + LTCG + dividends + interest + other"],
-        ["Adjustments to income", toMoney(0), "No above-the-line adjustments modeled"],
+        ["Total adjustments", toMoney(0), "No above-the-line adjustments modeled"],
         ["Adjusted gross income", toMoney(result.agi), "Income after modeled adjustments"]
       ]
     },
@@ -1476,7 +1476,7 @@ function renderSummaryOutput(result) {
         ["Tax before AMT and APTC", toMoney(result.regularTax), "Regular 2025 tax with LTCG / qualified dividend stacking"],
         ["Alternative minimum tax", toMoney(result.amt), `Tentative minimum tax ${toMoney(result.tentativeMinimumTax)} less regular tax for AMT comparison ${toMoney(result.regularTaxForAmtComparison)} and AMT FTC ${toMoney(result.amtFtcUsed)}`],
         ["Tax before credits", toMoney(result.taxBeforeCredits), "Regular tax + AMT"],
-        ["Ordinary marginal bracket", `${(result.ordinaryMarginalRate * 100).toFixed(1)}%`, "Based on taxable ordinary income"]
+        ["Ordinary income tax bracket", `${(result.ordinaryMarginalRate * 100).toFixed(1)}%`, "Based on taxable ordinary income"]
       ]
     },
     {
@@ -1515,7 +1515,7 @@ function renderSummaryOutput(result) {
       ]
     },
     {
-      title: "Diagnostics",
+      title: "Tax Rates And Detail",
       rows: [
         ["Taxable ordinary income", toMoney(result.taxableOrdinary), "Ordinary base for regular tax"],
         ["Taxable LTCG / qualified dividends", toMoney(result.taxablePref), "Preferential base after stacking"],
@@ -1555,23 +1555,19 @@ function renderAmtDetail(result) {
   if (!sumAmtOutput) return;
 
   const rows = [
-    ["Use the larger deduction from the main return", toMoney(result.deductionUsed), "This is the starting deduction used on the regular return"],
-    ["Taxable income from the main return", toMoney(result.taxableIncome), "Regular taxable income before minimum-tax adjustments"],
-    ["Add back state and local taxes", toMoney(result.inputs.itemizedTaxes), "State and local tax deduction is added back for minimum tax when itemizing"],
-    ["Add back tax-free bond interest that still counts for minimum tax", toMoney(result.inputs.amtBondInterest), "Only use this if you have that kind of bond interest"],
-    ["Other minimum-tax adjustments", toMoney(result.inputs.amtAdjustments), "Catch-all adjustment input for other minimum-tax differences"],
-    ["Minimum-tax income before exemption", toMoney(result.amtBaseIncome), "Taxable income plus minimum-tax addbacks and adjustments"],
-    ["Minimum-tax exemption", toMoney(result.amtExemption), "2025 MFJ exemption after any phaseout"],
-    ["Minimum-tax income after exemption", toMoney(result.amtTaxableIncome), "Amount subject to the minimum-tax rate calculation"],
-    ["Minimum-tax income using ordinary rates", toMoney(result.amtTaxableOrdinary), "Minimum-tax income excluding the lower-rate gains and dividends"],
-    ["Lower-rate amount inside minimum tax", toMoney(result.taxablePref), "Long-term gains plus dividends taxed at lower rates"],
-    ["Minimum-tax ordinary-rate amount", toMoney(result.amtOrdinaryTax), "26% / 28% minimum-tax rates on the ordinary piece"],
-    ["Minimum-tax lower-rate amount", toMoney(result.amtLtcgBreakdown.tax), "Lower-rate gains/dividend tax inside the minimum-tax calculation"],
-    ["Tentative minimum tax before foreign tax credit", toMoney(result.tentativeMinimumTax), "Ordinary-rate amount plus lower-rate amount"],
-    ["Minimum-tax foreign tax credit", toMoney(result.amtFtcUsed), "Separate foreign tax credit used only inside minimum tax"],
-    ["Tentative minimum tax after foreign tax credit", toMoney(Math.max(0, result.tentativeMinimumTax - result.amtFtcUsed)), "Tentative minimum tax net of the minimum-tax foreign tax credit"],
-    ["Regular-tax comparison amount", toMoney(result.regularTaxForAmtComparison), "Regular tax after the regular foreign tax credit"],
-    ["Minimum tax added to the return", toMoney(result.amt), "Extra tax only if tentative minimum tax stays above the regular-tax comparison amount"]
+    ["Line 1a. Subtract Schedule 1-A (Form 1040), line 37, from Form 1040, line 14", toMoney(result.deductionUsed), "Using the deduction shown on the main return"],
+    ["Line 1b. Subtract line 1a from Form 1040, line 11b", toMoney(result.taxableIncome), "Regular taxable income before minimum-tax adjustments"],
+    ["Line 2a. Taxes from Schedule A (Form 1040), line 7", toMoney(result.inputs.itemizedTaxes), "State and local taxes added back for AMT"],
+    ["Line 2g. Interest from specified private activity bonds exempt from regular tax", toMoney(result.inputs.amtBondInterest), "Use only if applicable"],
+    ["Line 3. Other adjustments, including income-based related adjustments", toMoney(result.inputs.amtAdjustments), "Catch-all AMT adjustment input"],
+    ["Line 4. Alternative minimum taxable income", toMoney(result.amtBaseIncome), "Combine taxable income and AMT adjustments"],
+    ["Line 5. Exemption", toMoney(result.amtExemption), "2025 MFJ exemption after any phaseout"],
+    ["Line 6. Subtract line 5 from line 4", toMoney(result.amtTaxableIncome), "Amount subject to AMT rate computation"],
+    ["Line 7. Tax", toMoney(result.tentativeMinimumTax), "AMT tax using lower capital-gain/dividend rates where applicable"],
+    ["Line 8. Alternative minimum tax foreign tax credit", toMoney(result.amtFtcUsed), "Separate FTC for AMT"],
+    ["Line 9. Tentative minimum tax", toMoney(Math.max(0, result.tentativeMinimumTax - result.amtFtcUsed)), "Line 7 minus line 8"],
+    ["Line 10. Regular tax for AMT comparison", toMoney(result.regularTaxForAmtComparison), "Regular tax after regular foreign tax credit"],
+    ["Line 11. AMT", toMoney(result.amt), "Line 9 minus line 10, if positive"]
   ];
 
   sumAmtOutput.innerHTML = rows
@@ -1586,19 +1582,20 @@ function renderNiitDetail(result) {
   const totalInvestmentIncome = result.inputs.interest + result.inputs.dividends + netGainForInvestmentTax;
 
   const rows = [
-    ["Interest income", toMoney(result.inputs.interest), "Taxable interest included in the investment-income tax"],
-    ["Dividend income", toMoney(result.inputs.dividends), "Use total ordinary dividends here"],
-    ["Annuities", toMoney(0), "Not separately modeled"],
-    ["Business / rental investment income", toMoney(0), "Not separately modeled unless added into other inputs manually"],
-    ["Net gains from sales", toMoney(netGainForInvestmentTax), "Net gains included in the investment-income tax"],
-    ["Total investment income before expenses", toMoney(totalInvestmentIncome), "Interest + dividends + net gains"],
-    ["Expenses tied to investing", toMoney(result.investmentExpensesUsed), "Investment expenses allowed against investment income"],
-    ["Net investment income", toMoney(result.nii), "Investment income after allowed expenses"],
-    ["Modified adjusted gross income", toMoney(result.agi), "This model uses AGI as the modified amount"],
-    ["Threshold", toMoney(result.inputs.niitThreshold), "MFJ threshold input"],
-    ["Amount above threshold", toMoney(result.magiExcess), "Modified AGI minus threshold"],
-    ["Amount actually taxed", toMoney(result.niitBase), "Smaller of net investment income and amount above threshold"],
-    ["Investment income tax", toMoney(result.niit), "3.8% of the taxed amount"]
+    ["Line 1. Taxable interest", toMoney(result.inputs.interest), "Taxable interest included in net investment income"],
+    ["Line 2. Ordinary dividends", toMoney(result.inputs.dividends), "Total ordinary dividends"],
+    ["Line 3. Annuities", toMoney(0), "Not separately modeled"],
+    ["Line 4c. Combine lines 4a and 4b", toMoney(0), "Business / rental investment income not separately modeled"],
+    ["Line 5d. Combine lines 5a through 5c", toMoney(netGainForInvestmentTax), "Net gain or loss from disposition of property"],
+    ["Line 8. Total investment income", toMoney(totalInvestmentIncome), "Combine lines 1, 2, 3, 4c, 5d, 6, and 7"],
+    ["Line 9a. Investment interest expenses", toMoney(result.investmentExpensesUsed), "Investment expenses allocated to investment income"],
+    ["Line 11. Total deductions and modifications", toMoney(result.investmentExpensesUsed), "Add lines 9d and 10"],
+    ["Line 12. Net investment income", toMoney(result.nii), "Line 8 minus line 11"],
+    ["Line 13. Modified adjusted gross income", toMoney(result.agi), "This model uses AGI as the modified amount"],
+    ["Line 14. Threshold based on filing status", toMoney(result.inputs.niitThreshold), "MFJ threshold"],
+    ["Line 15. Subtract line 14 from line 13", toMoney(result.magiExcess), "Modified AGI minus threshold"],
+    ["Line 16. Enter the smaller of line 12 or line 15", toMoney(result.niitBase), "Amount subject to NIIT"],
+    ["Line 17. Net investment income tax for individuals", toMoney(result.niit), "3.8% of line 16"]
   ];
 
   sumNiitOutput.innerHTML = rows
