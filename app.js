@@ -2054,6 +2054,7 @@ function getForm1116AdjustedTaxableIncome(result) {
 function buildBuilderBridgeRows(builder, result) {
   const passiveForm = computeBuilderForm1116(builder, result, "passive");
   const generalForm = computeBuilderForm1116(builder, result, "general");
+  const foreignNetCapital = builder.stcgForeign + builder.ltcgForeign;
   const passiveForeignGross = grossPositive(
     builder.stcgForeign,
     builder.ltcgForeign,
@@ -2085,10 +2086,12 @@ function buildBuilderBridgeRows(builder, result) {
     ["Qualified dividends used on return", toMoney(builder.qualifiedDividendsUs + builder.qualifiedDividendsForeign), "US qualified dividends + foreign qualified dividends"],
     ["Net short-term gain / loss used on return", toMoney(builder.stcgUs + builder.stcgForeign), "US short-term + foreign short-term"],
     ["Net long-term gain / loss used on return", toMoney(builder.ltcgUs + builder.ltcgForeign), "US long-term + foreign long-term"],
+    ["Net foreign capital gain / loss entered", toMoney(foreignNetCapital), "Foreign short-term + foreign long-term. Negative values reduce Form 1040 capital-gain income."],
     ["Foreign passive gross income for Form 1116 ratio", toMoney(passiveForeignGross), "Positive foreign passive items only: gains, dividends, interest, retirement / annuity"],
     ["Foreign general gross income for Form 1116 ratio", toMoney(generalForeignGross), "Positive foreign earned / business income only"],
     ["Worldwide gross income for Form 1116 ratio", toMoney(worldwideGross), "Positive gross income from all modeled sources except excluded foreign income / refund"],
     ["Excluded foreign income / refund kept out of return math", toMoney(builder.foreignExcludedIncome), "Tracked for context only. Not included in Form 1040 or either Form 1116 basket in this builder."],
+    ["Foreign capital loss adjustment used in Form 1116", toMoney(passiveForm.line5), "If foreign STCG or LTCG is negative, the adjusted loss shows up here rather than on Form 1116 line 1a."],
     ["Total current-year passive foreign taxes", toMoney(builder.ftaxPassiveGains + builder.ftaxPassiveDividends + builder.ftaxPassiveInterest + builder.ftaxPassiveOther), "Foreign taxes entered against passive income components"],
     ["Total current-year general foreign taxes", toMoney(builder.ftaxGeneral), "Foreign taxes entered against general-category income"],
     ["Passive Form 1116 allowed credit", toMoney(passiveForm.line24), "Passive basket line 24 from the current builder run."],
@@ -2345,26 +2348,21 @@ function renderBuilderAssumptions() {
 function updateBuilderMetrics(builder, result) {
   if (!builderMetricUsIncome) return;
 
-  const usIncome = grossPositive(
-    builder.wagesUs,
-    builder.interestUs,
-    builder.dividendsUs,
-    builder.stcgUs,
-    builder.ltcgUs,
-    builder.otherUs
-  );
-  const foreignPassive = grossPositive(
+  const usIncome = builder.wagesUs + builder.interestUs + builder.dividendsUs + builder.stcgUs + builder.ltcgUs + builder.otherUs;
+  const foreignPassiveNet = builder.interestForeign + builder.dividendsForeign + builder.stcgForeign + builder.ltcgForeign + builder.foreignPassiveOther;
+  const foreignPassiveGross = grossPositive(
     builder.interestForeign,
     builder.dividendsForeign,
     builder.stcgForeign,
     builder.ltcgForeign,
     builder.foreignPassiveOther
   );
-  const foreignGeneral = grossPositive(builder.foreignGeneralIncome);
+  const foreignGeneral = builder.foreignGeneralIncome;
   const deductions = builder.salt + builder.mortgageInterest + builder.otherItemized;
 
   builderMetricUsIncome.textContent = toMoney(usIncome);
-  builderMetricForeignPassive.textContent = toMoney(foreignPassive);
+  builderMetricForeignPassive.textContent = toMoney(foreignPassiveNet);
+  builderMetricForeignPassive.title = `Positive-gross passive basket used for Form 1116 ratio: ${toMoney(foreignPassiveGross)}`;
   builderMetricForeignGeneral.textContent = toMoney(foreignGeneral);
   builderMetricDeductions.textContent = toMoney(deductions);
   builderMetricFtc.textContent = toMoney(result.ftcAllowed);
@@ -2476,6 +2474,7 @@ function bindBuilderEvents() {
   Object.values(builderInputs).forEach((input) => {
     if (!input) return;
     input.placeholder = "0";
+    input.addEventListener("input", recalcBuilder);
     input.addEventListener("change", recalcBuilder);
     input.addEventListener("focus", () => {
       input.select?.();
