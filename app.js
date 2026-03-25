@@ -3060,6 +3060,17 @@ function computeAmtCalculator(inputs) {
     line4g: Math.max(0, inputs.regular4952Line4g + inputs.diff4952Line4g),
     line4e: Math.max(0, inputs.regular4952Line4e + inputs.diff4952Line4e)
   };
+  const amtStatement1Applies = [
+    inputs.diffQualifiedDividends,
+    inputs.diffStcg,
+    inputs.diffLtcg,
+    inputs.diff25Gain,
+    inputs.diff28Gain,
+    inputs.diff4952Line4g,
+    inputs.diff4952Line4e
+  ].some((value) => Math.abs(Number(value) || 0) > 0);
+  const amtStatement2Applies = inputs.taxableIncome <= 0;
+  const amtStatement3Applies = false;
 
   const line1a = Math.max(0, inputs.deductionClaimed);
   const line1b = inputs.taxableIncome;
@@ -3152,6 +3163,9 @@ function computeAmtCalculator(inputs) {
     inputs,
     regularValues,
     amtValues,
+    amtStatement1Applies,
+    amtStatement2Applies,
+    amtStatement3Applies,
     regularWorksheet,
     amtWorksheet,
     part3Required,
@@ -3558,8 +3572,11 @@ function recalcLine18Worksheets() {
 
 function getAmtCalcSummaryRows(calc) {
   return [
+    ["AMT statement (1) applies", calc.amtStatement1Applies ? "Yes" : "No", "This means some capital-gain or qualified-dividend amount is different for AMT than for regular tax."],
+    ["AMT statement (2) applies", calc.amtStatement2Applies ? "Yes" : "No", "This applies when taxable income is zero or less and the regular tax worksheets were not completed."],
+    ["AMT statement (3) applies", calc.amtStatement3Applies ? "Yes" : "No", "This is currently assumed No because the app does not yet model Schedule K-1 (Form 1041), box 12 codes B through F."],
     ["Selected regular worksheet", calc.regularWorksheet.type === "none" ? "None" : calc.regularWorksheet.type === "qdcg" ? "QDCG worksheet" : "Schedule D worksheet", "This drives Form 6251 lines 20 and 27."],
-    ["Selected AMT worksheet", calc.amtWorksheet.type === "none" ? "None" : calc.amtWorksheet.type === "qdcg" ? "AMT QDCG worksheet" : "AMT Schedule D worksheet", "This drives Form 6251 lines 13 through 15 and line 40."],
+    ["Selected AMT worksheet", calc.amtWorksheet.type === "none" ? "None" : calc.amtWorksheet.type === "qdcg" ? "AMT QDCG worksheet" : "AMT Schedule D worksheet", "This drives Form 6251 lines 13 through 15 and line 40. If AMT statements (1) through (3) are all No, this should generally mirror the regular-tax worksheet path."],
     ["AMT line 7 tax", toMoney(calc.form6251.line7), calc.part3Required ? "From Form 6251 Part III line 40." : "No AMT capital-gains worksheet was required, so line 7 uses the 26% / 28% AMT rate on line 6."],
     ["AMT foreign tax credit input", toMoney(calc.inputs.amtFtc), "Raw amount entered before the Form 6251 line 8 cap."],
     ["AMT foreign tax credit cap", toMoney(calc.form6251.line7), "Form 6251 line 8 cannot exceed line 7."],
