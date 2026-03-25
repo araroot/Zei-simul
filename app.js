@@ -443,6 +443,22 @@ const amt1116LimitOutput = document.getElementById("amt1116-limit-output");
 const line18Status = document.getElementById("line18-status");
 const line18RegularOutput = document.getElementById("line18-regular-output");
 const line18AmtOutput = document.getElementById("line18-amt-output");
+const line18ScheduleDInputs = {
+  regularLine1: document.getElementById("line18-sd-regular-line1"),
+  regularLine2: document.getElementById("line18-sd-regular-line2"),
+  regularLine4: document.getElementById("line18-sd-regular-line4"),
+  regularLine6: document.getElementById("line18-sd-regular-line6"),
+  regularLine8: document.getElementById("line18-sd-regular-line8"),
+  regularLine10: document.getElementById("line18-sd-regular-line10"),
+  amtLine1: document.getElementById("line18-sd-amt-line1"),
+  amtLine4: document.getElementById("line18-sd-amt-line4"),
+  amtLine6: document.getElementById("line18-sd-amt-line6"),
+  amtLine8: document.getElementById("line18-sd-amt-line8"),
+  amtLine10: document.getElementById("line18-sd-amt-line10")
+};
+const line18ScheduleDStatus = document.getElementById("line18-sd-status");
+const line18ScheduleDRegularOutput = document.getElementById("line18-sd-regular-output");
+const line18ScheduleDAmtOutput = document.getElementById("line18-sd-amt-output");
 const builderMetricUsIncome = document.getElementById("builder-metric-us-income");
 const builderMetricForeignPassive = document.getElementById("builder-metric-foreign-passive");
 const builderMetricForeignGeneral = document.getElementById("builder-metric-foreign-general");
@@ -3545,6 +3561,101 @@ function getAmtLine18Rows(data) {
   ];
 }
 
+function readLine18ScheduleDInputs() {
+  return {
+    regularLine1: parseNumber(line18ScheduleDInputs.regularLine1),
+    regularLine2: parseNumber(line18ScheduleDInputs.regularLine2),
+    regularLine4: parseNumber(line18ScheduleDInputs.regularLine4),
+    regularLine6: parseNumber(line18ScheduleDInputs.regularLine6),
+    regularLine8: parseNumber(line18ScheduleDInputs.regularLine8),
+    regularLine10: parseNumber(line18ScheduleDInputs.regularLine10),
+    amtLine1: parseNumber(line18ScheduleDInputs.amtLine1),
+    amtLine4: parseNumber(line18ScheduleDInputs.amtLine4),
+    amtLine6: parseNumber(line18ScheduleDInputs.amtLine6),
+    amtLine8: parseNumber(line18ScheduleDInputs.amtLine8),
+    amtLine10: parseNumber(line18ScheduleDInputs.amtLine10)
+  };
+}
+
+function computeLine18ScheduleDWorksheets(inputs) {
+  const regular = {
+    line1: Math.max(0, inputs.regularLine1),
+    line2: Math.max(0, inputs.regularLine2),
+    line3: Math.max(0, inputs.regularLine2) * 0.2432,
+    line4: Math.max(0, inputs.regularLine4),
+    line5: Math.max(0, inputs.regularLine4) * 0.3243,
+    line6: Math.max(0, inputs.regularLine6),
+    line7: Math.max(0, inputs.regularLine6) * 0.4595,
+    line8: Math.max(0, inputs.regularLine8),
+    line9: Math.max(0, inputs.regularLine8) * 0.5946,
+    line10: Math.max(0, inputs.regularLine10)
+  };
+  regular.line11 = regular.line3 + regular.line5 + regular.line7 + regular.line9 + regular.line10;
+  regular.line12 = Math.max(0, regular.line1 - regular.line11);
+
+  const amt = {
+    line1: Math.max(0, inputs.amtLine1),
+    line2: 0,
+    line3: 0,
+    line4: Math.max(0, inputs.amtLine4),
+    line5: Math.max(0, inputs.amtLine4) * 0.1071,
+    line6: Math.max(0, inputs.amtLine6),
+    line7: Math.max(0, inputs.amtLine6) * 0.2857,
+    line8: Math.max(0, inputs.amtLine8),
+    line9: Math.max(0, inputs.amtLine8) * 0.4643,
+    line10: Math.max(0, inputs.amtLine10)
+  };
+  amt.line11 = amt.line3 + amt.line5 + amt.line7 + amt.line9 + amt.line10;
+  amt.line12 = Math.max(0, amt.line1 - amt.line11);
+
+  return { regular, amt };
+}
+
+function getLine18ScheduleDRegularRows(data) {
+  return [
+    ["Line 1", toMoney(data.line1), "Form 1040 line 15."],
+    ["Line 2", toMoney(data.line2), "Worldwide 28% gains."],
+    ["Line 3", toMoney(data.line3), "Line 2 × 0.2432."],
+    ["Line 4", toMoney(data.line4), "Worldwide 25% gains."],
+    ["Line 5", toMoney(data.line5), "Line 4 × 0.3243."],
+    ["Line 6", toMoney(data.line6), "Worldwide 20% gains and qualified dividends."],
+    ["Line 7", toMoney(data.line7), "Line 6 × 0.4595."],
+    ["Line 8", toMoney(data.line8), "Worldwide 15% gains and qualified dividends."],
+    ["Line 9", toMoney(data.line9), "Line 8 × 0.5946."],
+    ["Line 10", toMoney(data.line10), "Worldwide 0% gains and qualified dividends."],
+    ["Line 11", toMoney(data.line11), "Add lines 3, 5, 7, 9, and 10."],
+    ["Line 12 / Form 1116 line 18", toMoney(data.line12), "Line 1 minus line 11."]
+  ];
+}
+
+function getLine18ScheduleDAmtRows(data) {
+  return [
+    ["Line 1", toMoney(data.line1), "Form 6251 line 4."],
+    ["Line 2", "N/A", "The AMT worksheet does not use a separate worldwide 28% gains line here."],
+    ["Line 3", "N/A", "The AMT worksheet does not use the regular 28% gain factor here."],
+    ["Line 4", toMoney(data.line4), "Worldwide 25% gains from Form 6251 line 36."],
+    ["Line 5", toMoney(data.line5), "Line 4 × 0.1071."],
+    ["Line 6", toMoney(data.line6), "Worldwide 20% gains and qualified dividends from Form 6251 line 33."],
+    ["Line 7", toMoney(data.line7), "Line 6 × 0.2857."],
+    ["Line 8", toMoney(data.line8), "Worldwide 15% gains and qualified dividends from Form 6251 line 30."],
+    ["Line 9", toMoney(data.line9), "Line 8 × 0.4643."],
+    ["Line 10", toMoney(data.line10), "Worldwide 0% gains and qualified dividends from Form 6251 line 23."],
+    ["Line 11", toMoney(data.line11), "Add lines 3, 5, 7, 9, and 10."],
+    ["Line 12 / Form 1116 line 18", toMoney(data.line12), "Line 1 minus line 11."]
+  ];
+}
+
+function recalcLine18ScheduleDWorksheets() {
+  if (!line18ScheduleDRegularOutput) return;
+  const inputs = readLine18ScheduleDInputs();
+  const data = computeLine18ScheduleDWorksheets(inputs);
+  if (line18ScheduleDStatus) {
+    line18ScheduleDStatus.textContent = `Regular line 18 denominator = ${toMoney(data.regular.line12)}. AMT line 18 denominator = ${toMoney(data.amt.line12)}.`;
+  }
+  renderRows(line18ScheduleDRegularOutput, getLine18ScheduleDRegularRows(data.regular));
+  renderRows(line18ScheduleDAmtOutput, getLine18ScheduleDAmtRows(data.amt));
+}
+
 function recalcLine18Worksheets() {
   if (!line18RegularOutput) return;
   const builder = readBuilderInputs();
@@ -3871,6 +3982,13 @@ function bindAmtCalcEvents() {
     input.placeholder = "0";
     input.addEventListener("input", recalcAmt1116Passive);
     input.addEventListener("change", recalcAmt1116Passive);
+  });
+  Object.values(line18ScheduleDInputs).forEach((input) => {
+    if (!input) return;
+    input.placeholder = "0";
+    input.addEventListener("input", recalcLine18ScheduleDWorksheets);
+    input.addEventListener("change", recalcLine18ScheduleDWorksheets);
+    input.addEventListener("focus", () => input.select?.());
   });
 }
 
@@ -4529,6 +4647,7 @@ function boot() {
     recalcSummary();
     recalcBuilder();
     recalcAmtCalculator();
+    recalcLine18ScheduleDWorksheets();
   } catch (err) {
     if (sumOutput) {
       sumOutput.innerHTML = `<tr><td>Runtime error</td><td>${String(err)}</td><td>Check console for details.</td></tr>`;
