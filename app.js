@@ -400,6 +400,37 @@ const scheduleDLine3Input = document.getElementById("schedule-d-line3-input");
 const scheduleDLine4Input = document.getElementById("schedule-d-line4-input");
 const scheduleDLine18Input = document.getElementById("schedule-d-line18-input");
 const scheduleDLine19Input = document.getElementById("schedule-d-line19-input");
+const amtCalcInputs = {
+  taxableIncome: document.getElementById("amt-taxable-income"),
+  deductionClaimed: document.getElementById("amt-deduction-claimed"),
+  line2a: document.getElementById("amt-line2a"),
+  bondInterest: document.getElementById("amt-bond-interest-calc"),
+  otherAdjustments: document.getElementById("amt-other-adjustments"),
+  regularTaxComparison: document.getElementById("amt-regular-tax-comparison"),
+  amtFtc: document.getElementById("amt-ftc-calc"),
+  regularQualifiedDividends: document.getElementById("amt-regular-qualified-dividends"),
+  regularStcg: document.getElementById("amt-regular-stcg"),
+  regularLtcg: document.getElementById("amt-regular-ltcg"),
+  regular25Gain: document.getElementById("amt-regular-25gain"),
+  regular28Gain: document.getElementById("amt-regular-28gain"),
+  regular4952Line4g: document.getElementById("amt-regular-4952-4g"),
+  regular4952Line4e: document.getElementById("amt-regular-4952-4e"),
+  regularWorksheetType: document.getElementById("amt-regular-worksheet-type"),
+  diffQualifiedDividends: document.getElementById("amt-diff-qualified-dividends"),
+  diffStcg: document.getElementById("amt-diff-stcg"),
+  diffLtcg: document.getElementById("amt-diff-ltcg"),
+  diff25Gain: document.getElementById("amt-diff-25gain"),
+  diff28Gain: document.getElementById("amt-diff-28gain"),
+  diff4952Line4g: document.getElementById("amt-diff-4952-4g"),
+  diff4952Line4e: document.getElementById("amt-diff-4952-4e"),
+  amtWorksheetType: document.getElementById("amt-amt-worksheet-type")
+};
+const amtCalcStatus = document.getElementById("amtcalc-status");
+const amtCalcSummaryOutput = document.getElementById("amtcalc-summary-output");
+const amtCalc6251Output = document.getElementById("amtcalc-6251-output");
+const amtCalcRegularWorksheetOutput = document.getElementById("amtcalc-regular-worksheet-output");
+const amtCalcAmtWorksheetOutput = document.getElementById("amtcalc-amt-worksheet-output");
+const amtCalcPart3Output = document.getElementById("amtcalc-part3-output");
 const builderMetricUsIncome = document.getElementById("builder-metric-us-income");
 const builderMetricForeignPassive = document.getElementById("builder-metric-foreign-passive");
 const builderMetricForeignGeneral = document.getElementById("builder-metric-foreign-general");
@@ -409,6 +440,32 @@ const builderMetricAmt = document.getElementById("builder-metric-amt");
 const builderMetricTotalTax = document.getElementById("builder-metric-total-tax");
 const builderMetricBalance = document.getElementById("builder-metric-balance");
 const builderMetricBalanceNote = document.getElementById("builder-metric-balance-note");
+
+const DEFAULT_AMT_CALC_INPUTS = {
+  taxableIncome: 826731,
+  deductionClaimed: 36878,
+  line2a: 10000,
+  bondInterest: 0,
+  otherAdjustments: 0,
+  regularTaxComparison: 3709,
+  amtFtc: 81143,
+  regularQualifiedDividends: 24036,
+  regularStcg: 0,
+  regularLtcg: 741452,
+  regular25Gain: 0,
+  regular28Gain: 0,
+  regular4952Line4g: 0,
+  regular4952Line4e: 0,
+  regularWorksheetType: "auto",
+  diffQualifiedDividends: 0,
+  diffStcg: 0,
+  diffLtcg: 0,
+  diff25Gain: 0,
+  diff28Gain: 0,
+  diff4952Line4g: 0,
+  diff4952Line4e: 0,
+  amtWorksheetType: "auto"
+};
 
 const DEFAULT_BUILDER_INPUTS = {
   wagesUs: 0,
@@ -2881,6 +2938,317 @@ function renderScheduleDTaxWorksheet(result, builder) {
   renderRows(scheduleDOutput, rows);
 }
 
+function readAmtCalcInputs() {
+  return {
+    taxableIncome: parseNumber(amtCalcInputs.taxableIncome),
+    deductionClaimed: parseNumber(amtCalcInputs.deductionClaimed),
+    line2a: parseNumber(amtCalcInputs.line2a),
+    bondInterest: parseNumber(amtCalcInputs.bondInterest),
+    otherAdjustments: parseNumber(amtCalcInputs.otherAdjustments),
+    regularTaxComparison: parseNumber(amtCalcInputs.regularTaxComparison),
+    amtFtc: parseNumber(amtCalcInputs.amtFtc),
+    regularQualifiedDividends: parseNumber(amtCalcInputs.regularQualifiedDividends),
+    regularStcg: parseNumber(amtCalcInputs.regularStcg),
+    regularLtcg: parseNumber(amtCalcInputs.regularLtcg),
+    regular25Gain: parseNumber(amtCalcInputs.regular25Gain),
+    regular28Gain: parseNumber(amtCalcInputs.regular28Gain),
+    regular4952Line4g: parseNumber(amtCalcInputs.regular4952Line4g),
+    regular4952Line4e: parseNumber(amtCalcInputs.regular4952Line4e),
+    regularWorksheetType: amtCalcInputs.regularWorksheetType?.value || "auto",
+    diffQualifiedDividends: parseNumber(amtCalcInputs.diffQualifiedDividends),
+    diffStcg: parseNumber(amtCalcInputs.diffStcg),
+    diffLtcg: parseNumber(amtCalcInputs.diffLtcg),
+    diff25Gain: parseNumber(amtCalcInputs.diff25Gain),
+    diff28Gain: parseNumber(amtCalcInputs.diff28Gain),
+    diff4952Line4g: parseNumber(amtCalcInputs.diff4952Line4g),
+    diff4952Line4e: parseNumber(amtCalcInputs.diff4952Line4e),
+    amtWorksheetType: amtCalcInputs.amtWorksheetType?.value || "auto"
+  };
+}
+
+function writeAmtCalcInputs(values) {
+  Object.entries(DEFAULT_AMT_CALC_INPUTS).forEach(([key, defaultValue]) => {
+    const input = amtCalcInputs[key];
+    if (!input) return;
+    const value = values[key] ?? defaultValue;
+    if (input.tagName === "SELECT") {
+      input.value = String(value);
+    } else {
+      input.value = String(Math.round(value));
+    }
+  });
+}
+
+function seedAmtCalcDefaults() {
+  if (!amtCalcSummaryOutput) return;
+  writeAmtCalcInputs(DEFAULT_AMT_CALC_INPUTS);
+}
+
+function resolvePassiveWorksheetType(worksheetType, qualifiedDividends, stcg, ltcg, gain25, gain28, line4g) {
+  if (worksheetType === "qdcg" || worksheetType === "schedule-d") {
+    return worksheetType;
+  }
+  const scheduleDLine15 = ltcg;
+  const scheduleDLine16 = stcg + ltcg;
+  const hasQdcgStyleIncome = qualifiedDividends > 0 || (scheduleDLine15 > 0 && scheduleDLine16 > 0);
+  if (gain25 > 0 || gain28 > 0 || line4g > 0) return "schedule-d";
+  if (hasQdcgStyleIncome) return "qdcg";
+  return "none";
+}
+
+function buildPassiveWorksheetSnapshot({ taxableIncome, qualifiedDividends, stcg, ltcg, gain25, gain28, line4g, line4e, worksheetType }) {
+  const type = resolvePassiveWorksheetType(worksheetType, qualifiedDividends, stcg, ltcg, gain25, gain28, line4g);
+  const fakeResult = {
+    taxableIncome: Math.max(0, taxableIncome),
+    qualifiedDividends: Math.max(0, qualifiedDividends),
+    capNet: netCapital(stcg, ltcg, 3000)
+  };
+  const fakeBuilder = {
+    stcgUs: stcg,
+    stcgForeign: 0,
+    ltcgUs: ltcg,
+    ltcgForeign: 0
+  };
+  const qdcg = computeQdcgWorksheet(fakeResult, {});
+  const scheduleD = computeScheduleDTaxWorksheet(fakeResult, fakeBuilder, {
+    line3: line4g,
+    line4: line4e,
+    line18: gain28,
+    line19: gain25
+  });
+  return { type, qdcg, scheduleD, inputs: { taxableIncome, qualifiedDividends, stcg, ltcg, gain25, gain28, line4g, line4e } };
+}
+
+function computeAmtCalculator(inputs) {
+  const regularValues = {
+    qualifiedDividends: Math.max(0, inputs.regularQualifiedDividends),
+    stcg: inputs.regularStcg,
+    ltcg: inputs.regularLtcg,
+    gain25: Math.max(0, inputs.regular25Gain),
+    gain28: Math.max(0, inputs.regular28Gain),
+    line4g: Math.max(0, inputs.regular4952Line4g),
+    line4e: Math.max(0, inputs.regular4952Line4e)
+  };
+  const amtValues = {
+    qualifiedDividends: Math.max(0, inputs.regularQualifiedDividends + inputs.diffQualifiedDividends),
+    stcg: inputs.regularStcg + inputs.diffStcg,
+    ltcg: inputs.regularLtcg + inputs.diffLtcg,
+    gain25: Math.max(0, inputs.regular25Gain + inputs.diff25Gain),
+    gain28: Math.max(0, inputs.regular28Gain + inputs.diff28Gain),
+    line4g: Math.max(0, inputs.regular4952Line4g + inputs.diff4952Line4g),
+    line4e: Math.max(0, inputs.regular4952Line4e + inputs.diff4952Line4e)
+  };
+
+  const line1a = Math.max(0, inputs.deductionClaimed);
+  const line1b = inputs.taxableIncome;
+  const line2a = Math.max(0, inputs.line2a);
+  const line2g = Math.max(0, inputs.bondInterest);
+  const line3 = inputs.otherAdjustments;
+  const line4 = line1b + line2a + line2g + line3;
+  const exemptionReduction = Math.max(0, line4 - AMT_EXEMPTION_PHASEOUT_2025_MFJ) * 0.25;
+  const line5 = Math.max(0, AMT_EXEMPTION_2025_MFJ - exemptionReduction);
+  const line6 = Math.max(0, line4 - line5);
+
+  const regularWorksheet = buildPassiveWorksheetSnapshot({
+    taxableIncome: Math.max(0, inputs.taxableIncome),
+    qualifiedDividends: regularValues.qualifiedDividends,
+    stcg: regularValues.stcg,
+    ltcg: regularValues.ltcg,
+    gain25: regularValues.gain25,
+    gain28: regularValues.gain28,
+    line4g: regularValues.line4g,
+    line4e: regularValues.line4e,
+    worksheetType: inputs.regularWorksheetType
+  });
+
+  const amtWorksheet = buildPassiveWorksheetSnapshot({
+    taxableIncome: line6,
+    qualifiedDividends: amtValues.qualifiedDividends,
+    stcg: amtValues.stcg,
+    ltcg: amtValues.ltcg,
+    gain25: amtValues.gain25,
+    gain28: amtValues.gain28,
+    line4g: amtValues.line4g,
+    line4e: amtValues.line4e,
+    worksheetType: inputs.amtWorksheetType
+  });
+
+  const part3Required = line6 > 0 && amtWorksheet.type !== "none";
+  const line12 = line6;
+  const line13 = !part3Required
+    ? 0
+    : amtWorksheet.type === "schedule-d"
+      ? amtWorksheet.scheduleD.line13
+      : amtWorksheet.qdcg.line4;
+  const line14 = !part3Required ? 0 : amtValues.gain25;
+  const line15 = !part3Required
+    ? 0
+    : amtWorksheet.type === "schedule-d"
+      ? Math.min(line13 + line14, amtWorksheet.scheduleD.line10)
+      : line13;
+  const line16 = !part3Required ? 0 : Math.min(line12, line15);
+  const line17 = !part3Required ? 0 : Math.max(0, line12 - line16);
+  const line18 = !part3Required ? 0 : calcAmtOrdinaryTax(line17);
+  const line19 = 96700;
+  const line20 = regularWorksheet.type === "schedule-d"
+    ? regularWorksheet.scheduleD.line14
+    : regularWorksheet.type === "qdcg"
+      ? regularWorksheet.qdcg.line5
+      : Math.max(0, inputs.taxableIncome);
+  const line21 = !part3Required ? 0 : Math.max(0, line19 - line20);
+  const line22 = !part3Required ? 0 : Math.min(line12, line13);
+  const line23 = !part3Required ? 0 : Math.min(line21, line22);
+  const line24 = !part3Required ? 0 : Math.max(0, line22 - line23);
+  const line25 = 600050;
+  const line26 = !part3Required ? 0 : line21;
+  const line27 = regularWorksheet.type === "schedule-d"
+    ? regularWorksheet.scheduleD.line21
+    : regularWorksheet.type === "qdcg"
+      ? regularWorksheet.qdcg.line5
+      : Math.max(0, inputs.taxableIncome);
+  const line28 = !part3Required ? 0 : line26 + line27;
+  const line29 = !part3Required ? 0 : Math.max(0, line25 - line28);
+  const line30 = !part3Required ? 0 : Math.min(line24, line29);
+  const line31 = line30 * 0.15;
+  const line32 = !part3Required ? 0 : line23 + line30;
+  const line33 = !part3Required || line32 === line12 ? 0 : Math.max(0, line22 - line32);
+  const line34 = line33 * 0.2;
+  const line35 = !part3Required || line14 <= 0 ? 0 : line17 + line32 + line33;
+  const line36 = !part3Required || line14 <= 0 ? 0 : Math.max(0, line12 - line35);
+  const line37 = line36 * 0.25;
+  const line38 = !part3Required ? 0 : line18 + line31 + line34 + line37;
+  const line39 = calcAmtOrdinaryTax(line12);
+  const line40 = !part3Required ? 0 : Math.min(line38, line39);
+
+  const line7 = part3Required ? line40 : calcAmtOrdinaryTax(line6);
+  const line8 = Math.min(Math.max(0, inputs.amtFtc), line7);
+  const line9 = Math.max(0, line7 - line8);
+  const line10 = Math.max(0, inputs.regularTaxComparison);
+  const line11 = Math.max(0, line9 - line10);
+
+  return {
+    inputs,
+    regularValues,
+    amtValues,
+    regularWorksheet,
+    amtWorksheet,
+    part3Required,
+    form6251: {
+      line1a, line1b, line2a, line2g, line3, line4, line5, line6, line7, line8, line9, line10, line11
+    },
+    part3: {
+      line12, line13, line14, line15, line16, line17, line18, line19, line20, line21, line22,
+      line23, line24, line25, line26, line27, line28, line29, line30, line31, line32, line33,
+      line34, line35, line36, line37, line38, line39, line40
+    }
+  };
+}
+
+function getAmtCalcSummaryRows(calc) {
+  return [
+    ["Selected regular worksheet", calc.regularWorksheet.type === "none" ? "None" : calc.regularWorksheet.type === "qdcg" ? "QDCG worksheet" : "Schedule D worksheet", "This drives Form 6251 lines 20 and 27."],
+    ["Selected AMT worksheet", calc.amtWorksheet.type === "none" ? "None" : calc.amtWorksheet.type === "qdcg" ? "AMT QDCG worksheet" : "AMT Schedule D worksheet", "This drives Form 6251 lines 13 through 15 and line 40."],
+    ["AMT line 7 tax", toMoney(calc.form6251.line7), calc.part3Required ? "From Form 6251 Part III line 40." : "No AMT capital-gains worksheet was required, so line 7 uses the 26% / 28% AMT rate on line 6."],
+    ["AMT foreign tax credit", toMoney(calc.form6251.line8), "Form 6251 line 8, capped at line 7."],
+    ["Tentative minimum tax after AMT FTC", toMoney(calc.form6251.line9), "Form 6251 line 9."],
+    ["Regular tax for AMT comparison", toMoney(calc.form6251.line10), "Form 6251 line 10 input."],
+    ["Alternative minimum tax", toMoney(calc.form6251.line11), "Form 6251 line 11."]
+  ];
+}
+
+function getAmtCalc6251Rows(calc) {
+  return [
+    ["Line 1a", toMoney(calc.form6251.line1a), "Deduction claimed on the return."],
+    ["Line 1b", toMoney(calc.form6251.line1b), "Taxable income on the return."],
+    ["Line 2a", toMoney(calc.form6251.line2a), "AMT deduction addback."],
+    ["Line 2g", toMoney(calc.form6251.line2g), "Private-activity bond interest."],
+    ["Line 3", toMoney(calc.form6251.line3), "Other AMT adjustments."],
+    ["Line 4", toMoney(calc.form6251.line4), "Alternative minimum taxable income before exemption."],
+    ["Line 5", toMoney(calc.form6251.line5), "2025 MFJ exemption after phaseout."],
+    ["Line 6", toMoney(calc.form6251.line6), "AMTI after exemption."],
+    ["Line 7", toMoney(calc.form6251.line7), calc.part3Required ? "From Part III line 40." : "26% / 28% AMT rate on line 6."],
+    ["Line 8", toMoney(calc.form6251.line8), "AMT foreign tax credit used."],
+    ["Line 9", toMoney(calc.form6251.line9), "Line 7 minus line 8."],
+    ["Line 10", toMoney(calc.form6251.line10), "Regular tax for AMT comparison."],
+    ["Line 11", toMoney(calc.form6251.line11), "Line 9 minus line 10, if positive."]
+  ];
+}
+
+function getAmtCalcWorksheetRows(bundle, labelPrefix) {
+  if (bundle.type === "none") {
+    return [[`${labelPrefix} worksheet`, "None", "No qualified dividends or capital-gain pattern requiring a preferential-rate worksheet was detected."]];
+  }
+  if (bundle.type === "qdcg") {
+    return [
+      [`${labelPrefix} worksheet`, "QDCG worksheet", "Uses the Qualified Dividends and Capital Gain Tax Worksheet."],
+      ["Line 1", toMoney(bundle.qdcg.line1), "Taxable income input."],
+      ["Line 2", toMoney(bundle.qdcg.line2), "Qualified dividends."],
+      ["Line 3", toMoney(bundle.qdcg.line3), "Net capital gain input."],
+      ["Line 4", toMoney(bundle.qdcg.line4), "Line 2 plus line 3."],
+      ["Line 5", toMoney(bundle.qdcg.line5), "Line 1 minus line 4."]
+    ];
+  }
+  return [
+    [`${labelPrefix} worksheet`, "Schedule D worksheet", "Uses the Schedule D Tax Worksheet."],
+    ["Line 7", toMoney(bundle.scheduleD.line7), "Smaller of Schedule D line 15 or 16."],
+    ["Line 10", toMoney(bundle.scheduleD.line10), "Used for AMT Form 6251 line 15 when Schedule D worksheet applies."],
+    ["Line 13", toMoney(bundle.scheduleD.line13), "Used for AMT Form 6251 line 13 when Schedule D worksheet applies."],
+    ["Line 14", toMoney(bundle.scheduleD.line14), "Used for Form 6251 line 20 when regular Schedule D worksheet applies."],
+    ["Line 21", toMoney(bundle.scheduleD.line21), "Used for Form 6251 line 27 when regular Schedule D worksheet applies."]
+  ];
+}
+
+function getAmtCalcPart3Rows(calc) {
+  return [
+    ["Line 12", toMoney(calc.part3.line12), "Form 6251 line 6."],
+    ["Line 13", toMoney(calc.part3.line13), calc.amtWorksheet.type === "schedule-d" ? "AMT Schedule D Tax Worksheet line 13." : calc.amtWorksheet.type === "qdcg" ? "AMT QDCG worksheet line 4." : "Part III not required."],
+    ["Line 14", toMoney(calc.part3.line14), "AMT Schedule D line 19 (25% rate gain)."],
+    ["Line 15", toMoney(calc.part3.line15), calc.amtWorksheet.type === "schedule-d" ? "Smaller of line 13 + line 14, or AMT Schedule D Tax Worksheet line 10." : calc.amtWorksheet.type === "qdcg" ? "Because Schedule D Tax Worksheet is not used, line 15 equals line 13." : "Part III not required."],
+    ["Line 16", toMoney(calc.part3.line16), "Smaller of line 12 or line 15."],
+    ["Line 17", toMoney(calc.part3.line17), "Line 12 minus line 16."],
+    ["Line 18", toMoney(calc.part3.line18), "26% / 28% AMT tax on line 17."],
+    ["Line 19", toMoney(calc.part3.line19), "2025 MFJ 0% threshold."],
+    ["Line 20", toMoney(calc.part3.line20), calc.regularWorksheet.type === "schedule-d" ? "Regular Schedule D Tax Worksheet line 14." : calc.regularWorksheet.type === "qdcg" ? "Regular QDCG worksheet line 5." : "No regular preferential-rate worksheet; uses taxable income if positive."],
+    ["Line 21", toMoney(calc.part3.line21), "Line 19 minus line 20, if positive."],
+    ["Line 22", toMoney(calc.part3.line22), "Smaller of line 12 or line 13."],
+    ["Line 23", toMoney(calc.part3.line23), "Smaller of line 21 or line 22. Taxed at 0%."],
+    ["Line 24", toMoney(calc.part3.line24), "Line 22 minus line 23."],
+    ["Line 25", toMoney(calc.part3.line25), "2025 MFJ 15% / 20% threshold."],
+    ["Line 26", toMoney(calc.part3.line26), "Amount from line 21."],
+    ["Line 27", toMoney(calc.part3.line27), calc.regularWorksheet.type === "schedule-d" ? "Regular Schedule D Tax Worksheet line 21." : calc.regularWorksheet.type === "qdcg" ? "Regular QDCG worksheet line 5." : "No regular preferential-rate worksheet; uses taxable income if positive."],
+    ["Line 28", toMoney(calc.part3.line28), "Line 26 plus line 27."],
+    ["Line 29", toMoney(calc.part3.line29), "Line 25 minus line 28, if positive."],
+    ["Line 30", toMoney(calc.part3.line30), "Smaller of line 24 or line 29."],
+    ["Line 31", toMoney(calc.part3.line31), "15% of line 30."],
+    ["Line 32", toMoney(calc.part3.line32), "Line 23 plus line 30."],
+    ["Line 33", toMoney(calc.part3.line33), "Line 22 minus line 32, unless lines 32 and 12 are the same."],
+    ["Line 34", toMoney(calc.part3.line34), "20% of line 33."],
+    ["Line 35", toMoney(calc.part3.line35), "Line 17 + line 32 + line 33, only when line 14 is nonzero."],
+    ["Line 36", toMoney(calc.part3.line36), "Line 12 minus line 35."],
+    ["Line 37", toMoney(calc.part3.line37), "25% of line 36."],
+    ["Line 38", toMoney(calc.part3.line38), "Line 18 + line 31 + line 34 + line 37."],
+    ["Line 39", toMoney(calc.part3.line39), "26% / 28% AMT tax on line 12."],
+    ["Line 40", toMoney(calc.part3.line40), "Smaller of line 38 or line 39. This flows to Form 6251 line 7."]
+  ];
+}
+
+function recalcAmtCalculator() {
+  if (!amtCalcSummaryOutput) return;
+  const calc = computeAmtCalculator(readAmtCalcInputs());
+  if (amtCalcStatus) {
+    if (calc.part3Required) {
+      amtCalcStatus.textContent = `Part III is active. Regular worksheet: ${calc.regularWorksheet.type === "qdcg" ? "QDCG" : calc.regularWorksheet.type === "schedule-d" ? "Schedule D" : "none"}. AMT worksheet: ${calc.amtWorksheet.type === "qdcg" ? "AMT QDCG" : calc.amtWorksheet.type === "schedule-d" ? "AMT Schedule D" : "none"}.`;
+    } else {
+      amtCalcStatus.textContent = "Part III is not required under the current passive-income inputs. Line 7 is being computed directly from the 26% / 28% AMT rate on line 6.";
+    }
+  }
+  renderRows(amtCalcSummaryOutput, getAmtCalcSummaryRows(calc));
+  renderRows(amtCalc6251Output, getAmtCalc6251Rows(calc));
+  renderRows(amtCalcRegularWorksheetOutput, getAmtCalcWorksheetRows(calc.regularWorksheet, "Regular"));
+  renderRows(amtCalcAmtWorksheetOutput, getAmtCalcWorksheetRows(calc.amtWorksheet, "AMT"));
+  renderRows(amtCalcPart3Output, getAmtCalcPart3Rows(calc));
+}
+
 function updateBuilderMetrics(builder, result) {
   if (!builderMetricUsIncome) return;
 
@@ -3046,6 +3414,19 @@ function bindBuilderEvents() {
     input.placeholder = "0";
     input.addEventListener("input", recalcBuilder);
     input.addEventListener("change", recalcBuilder);
+  });
+}
+
+function bindAmtCalcEvents() {
+  if (!amtCalcSummaryOutput) return;
+  Object.values(amtCalcInputs).forEach((input) => {
+    if (!input) return;
+    if (input.tagName !== "SELECT") {
+      input.placeholder = "0";
+    }
+    input.addEventListener("input", recalcAmtCalculator);
+    input.addEventListener("change", recalcAmtCalculator);
+    input.addEventListener("focus", () => input.select?.());
   });
 }
 
@@ -3696,11 +4077,14 @@ function boot() {
     refreshHeatmapTab();
     seedSummaryDefaults();
     seedBuilderDefaults();
+    seedAmtCalcDefaults();
     bindSummaryEvents();
     bindBuilderEvents();
+    bindAmtCalcEvents();
     renderSummaryAssumptions();
     recalcSummary();
     recalcBuilder();
+    recalcAmtCalculator();
   } catch (err) {
     if (sumOutput) {
       sumOutput.innerHTML = `<tr><td>Runtime error</td><td>${String(err)}</td><td>Check console for details.</td></tr>`;

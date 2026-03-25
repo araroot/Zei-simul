@@ -34,6 +34,7 @@
         <button class="top-tab" data-panel="panel-builder">Return Builder</button>
         <button class="top-tab" data-panel="panel-qdcg">QDCG Worksheet</button>
         <button class="top-tab" data-panel="panel-schedule-d-worksheet">Schedule D Worksheet</button>
+        <button class="top-tab" data-panel="panel-amt-calculator">AMT Calculator</button>
       </nav>
 
       <main>
@@ -645,10 +646,160 @@
             </section>
           </div>
         </section>
+
+        <section id="panel-amt-calculator" class="tab-panel">
+          <div class="stack">
+            <section class="card">
+              <h2>AMT Calculator</h2>
+              <p class="hint">Focused on passive-income AMT. This tab builds Form 6251 from raw inputs, then computes the AMT capital-gains path using either the AMT QDCG worksheet or the AMT Schedule D Tax Worksheet.</p>
+            </section>
+
+            <section class="card">
+              <div class="builder-toolbar">
+                <div>
+                  <div class="builder-toolbar-title">AMT Inputs</div>
+                  <p class="builder-toolbar-copy">Enter regular-tax passive-income amounts and any AMT-only differences. The calculator uses the regular worksheet for Form 6251 lines 20 and 27, and the AMT worksheet for lines 13 through 15 and line 40.</p>
+                </div>
+              </div>
+
+              <div class="builder-sections">
+                <section class="builder-panel tone-deductions">
+                  <div class="builder-section-header">
+                    <div class="builder-section-title">Base Return Amounts</div>
+                    <p class="builder-section-copy">These are the non-passive inputs that drive Form 6251 lines 1 through 11.</p>
+                  </div>
+                  <div class="builder-grid">
+                    <label class="builder-field"><span class="field-title">Taxable income on your return</span><span class="field-help">Form 1040 line 15.</span><input id="amt-taxable-income" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Deduction claimed on your return</span><span class="field-help">The deduction amount used to get from AGI to taxable income.</span><input id="amt-deduction-claimed" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">AMT deduction addback</span><span class="field-help">Usually SALT if you itemized, or the standard deduction amount if you did not.</span><input id="amt-line2a" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Private-activity bond interest</span><span class="field-help">Tax-exempt bond interest that still counts for AMT.</span><input id="amt-bond-interest-calc" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Other AMT adjustments</span><span class="field-help">Signed amount for all other AMT adjustments and preferences.</span><input id="amt-other-adjustments" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Regular tax after regular FTC</span><span class="field-help">Form 6251 line 10.</span><input id="amt-regular-tax-comparison" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">AMT foreign tax credit</span><span class="field-help">Form 6251 line 8.</span><input id="amt-ftc-calc" type="number" step="1" /></label>
+                  </div>
+                </section>
+
+                <section class="builder-panel tone-passive">
+                  <div class="builder-section-header">
+                    <div class="builder-section-title">Regular Passive-Income Inputs</div>
+                    <p class="builder-section-copy">These are the regular-tax capital-gains and dividend amounts used for Form 6251 lines 20 and 27.</p>
+                  </div>
+                  <div class="builder-grid">
+                    <label class="builder-field"><span class="field-title">Regular qualified dividends</span><span class="field-help">Qualified dividends for the regular-tax worksheet.</span><input id="amt-regular-qualified-dividends" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Regular short-term capital gain or loss</span><span class="field-help">Net short-term amount for the regular-tax worksheet.</span><input id="amt-regular-stcg" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Regular long-term capital gain or loss</span><span class="field-help">Net long-term amount for the regular-tax worksheet.</span><input id="amt-regular-ltcg" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Regular 25% rate gain</span><span class="field-help">Usually Schedule D line 19. Leave 0 if not applicable.</span><input id="amt-regular-25gain" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Regular 28% rate gain</span><span class="field-help">Usually Schedule D line 18. Leave 0 if not applicable.</span><input id="amt-regular-28gain" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Regular Form 4952 line 4g</span><span class="field-help">Investment-interest election amount for the regular worksheet.</span><input id="amt-regular-4952-4g" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Regular Form 4952 line 4e</span><span class="field-help">Investment income amount used with Form 4952 line 4g.</span><input id="amt-regular-4952-4e" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">Regular worksheet type</span><span class="field-help">Use Auto unless you know the IRS worksheet that applies.</span><select id="amt-regular-worksheet-type"><option value="auto">Auto</option><option value="qdcg">QDCG worksheet</option><option value="schedule-d">Schedule D worksheet</option></select></label>
+                  </div>
+                </section>
+
+                <section class="builder-panel tone-general">
+                  <div class="builder-section-header">
+                    <div class="builder-section-title">AMT Differences From Regular</div>
+                    <p class="builder-section-copy">Enter only the differences between AMT and regular-tax passive-income amounts. Leave at 0 when AMT and regular are the same.</p>
+                  </div>
+                  <div class="builder-grid">
+                    <label class="builder-field"><span class="field-title">AMT adjustment to qualified dividends</span><span class="field-help">AMT qualified dividends minus regular qualified dividends.</span><input id="amt-diff-qualified-dividends" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">AMT adjustment to short-term gain or loss</span><span class="field-help">AMT short-term amount minus regular short-term amount.</span><input id="amt-diff-stcg" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">AMT adjustment to long-term gain or loss</span><span class="field-help">AMT long-term amount minus regular long-term amount.</span><input id="amt-diff-ltcg" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">AMT adjustment to 25% rate gain</span><span class="field-help">AMT 25% rate gain minus regular 25% rate gain.</span><input id="amt-diff-25gain" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">AMT adjustment to 28% rate gain</span><span class="field-help">AMT 28% rate gain minus regular 28% rate gain.</span><input id="amt-diff-28gain" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">AMT adjustment to Form 4952 line 4g</span><span class="field-help">AMT Form 4952 line 4g minus regular Form 4952 line 4g.</span><input id="amt-diff-4952-4g" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">AMT adjustment to Form 4952 line 4e</span><span class="field-help">AMT Form 4952 line 4e minus regular Form 4952 line 4e.</span><input id="amt-diff-4952-4e" type="number" step="1" /></label>
+                    <label class="builder-field"><span class="field-title">AMT worksheet type</span><span class="field-help">Use Auto unless you know the AMT worksheet that applies.</span><select id="amt-amt-worksheet-type"><option value="auto">Auto</option><option value="qdcg">AMT QDCG worksheet</option><option value="schedule-d">AMT Schedule D worksheet</option></select></label>
+                  </div>
+                </section>
+              </div>
+            </section>
+
+            <section class="card">
+              <div id="amtcalc-status" class="status-box"></div>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>AMT Summary</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="amtcalc-summary-output"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>AMT Form 6251 Part I and Part II</h2>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Form 6251 Line</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="amtcalc-6251-output"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Regular Passive Worksheet</h2>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Regular Worksheet Line</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="amtcalc-regular-worksheet-output"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>AMT Passive Worksheet</h2>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>AMT Worksheet Line</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="amtcalc-amt-worksheet-output"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Form 6251 Part III</h2>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Part III Line</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="amtcalc-part3-output"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
   </main>
     </div>
 
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="./app.js?v=20260324s"></script>
+    <script src="./app.js?v=20260325a"></script>
   </body>
 </html>
