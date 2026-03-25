@@ -3149,7 +3149,9 @@ function getAmtCalcSummaryRows(calc) {
     ["Selected regular worksheet", calc.regularWorksheet.type === "none" ? "None" : calc.regularWorksheet.type === "qdcg" ? "QDCG worksheet" : "Schedule D worksheet", "This drives Form 6251 lines 20 and 27."],
     ["Selected AMT worksheet", calc.amtWorksheet.type === "none" ? "None" : calc.amtWorksheet.type === "qdcg" ? "AMT QDCG worksheet" : "AMT Schedule D worksheet", "This drives Form 6251 lines 13 through 15 and line 40."],
     ["AMT line 7 tax", toMoney(calc.form6251.line7), calc.part3Required ? "From Form 6251 Part III line 40." : "No AMT capital-gains worksheet was required, so line 7 uses the 26% / 28% AMT rate on line 6."],
-    ["AMT foreign tax credit", toMoney(calc.form6251.line8), "Form 6251 line 8, capped at line 7."],
+    ["AMT foreign tax credit input", toMoney(calc.inputs.amtFtc), "Raw amount entered before the Form 6251 line 8 cap."],
+    ["AMT foreign tax credit cap", toMoney(calc.form6251.line7), "Form 6251 line 8 cannot exceed line 7."],
+    ["AMT foreign tax credit used", toMoney(calc.form6251.line8), `Smaller of AMT FTC input ${toMoney(calc.inputs.amtFtc)} and line 7 ${toMoney(calc.form6251.line7)}.`],
     ["Tentative minimum tax after AMT FTC", toMoney(calc.form6251.line9), "Form 6251 line 9."],
     ["Regular tax for AMT comparison", toMoney(calc.form6251.line10), "Form 6251 line 10 input."],
     ["Alternative minimum tax", toMoney(calc.form6251.line11), "Form 6251 line 11."]
@@ -3167,7 +3169,7 @@ function getAmtCalc6251Rows(calc) {
     ["Line 5", toMoney(calc.form6251.line5), "2025 MFJ exemption after phaseout."],
     ["Line 6", toMoney(calc.form6251.line6), "AMTI after exemption."],
     ["Line 7", toMoney(calc.form6251.line7), calc.part3Required ? "From Part III line 40." : "26% / 28% AMT rate on line 6."],
-    ["Line 8", toMoney(calc.form6251.line8), "AMT foreign tax credit used."],
+    ["Line 8", toMoney(calc.form6251.line8), `Smaller of AMT FTC input ${toMoney(calc.inputs.amtFtc)} and line 7 ${toMoney(calc.form6251.line7)}.`],
     ["Line 9", toMoney(calc.form6251.line9), "Line 7 minus line 8."],
     ["Line 10", toMoney(calc.form6251.line10), "Regular tax for AMT comparison."],
     ["Line 11", toMoney(calc.form6251.line11), "Line 9 minus line 10, if positive."]
