@@ -432,6 +432,8 @@ const amtCalcRegularWorksheetOutput = document.getElementById("amtcalc-regular-w
 const amtCalcAmtWorksheetOutput = document.getElementById("amtcalc-amt-worksheet-output");
 const amtCalcPart3Output = document.getElementById("amtcalc-part3-output");
 const amt1116SimplifiedElectionInput = document.getElementById("amt1116-simplified-election");
+const amt1116ManualLine1aCapitalInput = document.getElementById("amt1116-manual-line1a-capital");
+const amt1116ManualLine5LossInput = document.getElementById("amt1116-manual-line5-loss");
 const amt1116Status = document.getElementById("amt1116-status");
 const amt1116Output = document.getElementById("amt1116-output");
 const amt1116Line18Output = document.getElementById("amt1116-line18-output");
@@ -3152,21 +3154,33 @@ function computeAmtCalculator(inputs) {
 function computeAmtPassiveForm1116(builder, amtCalc, options = {}) {
   const simplifiedElection = options.simplifiedElection === true;
   const passiveGrossForRatio = getBuilderPassiveGrossIncome(builder);
-  const generalGrossForRatio = Math.max(0, builder.foreignGeneralIncome);
   const worldwideGross = getBuilderWorldwideGrossIncome(builder);
   const ratio = worldwideGross > 0 ? passiveGrossForRatio / worldwideGross : 0;
 
+  const manualLine1aCapital = Math.max(0, Number(options.manualLine1aCapital) || 0);
+  const manualLine5Loss = Math.max(0, Number(options.manualLine5Loss) || 0);
+  const hasForeignCapitalActivity = Math.abs(builder.stcgForeign) > 0 || Math.abs(builder.ltcgForeign) > 0;
   const amtBreakdown = {
     atZero: amtCalc.part3.line23,
     atFifteen: amtCalc.part3.line30,
     atTwenty: amtCalc.part3.line33
   };
-  const supportResult = { ltcgBreakdown: amtBreakdown };
-  const passiveCapital = computePassive1116CapitalSupport(builder, supportResult);
+  const totalQualified = builder.qualifiedDividendsUs + builder.qualifiedDividendsForeign;
+  const totalPositiveLongTerm = Math.max(0, builder.ltcgUs) + Math.max(0, builder.ltcgForeign);
+  const allocation = getPreferentialBucketAllocation(totalQualified, totalPositiveLongTerm, amtBreakdown);
+  const foreignQualifiedShare = totalQualified > 0 ? builder.qualifiedDividendsForeign / totalQualified : 0;
+  const foreignQd0 = allocation.qd0 * foreignQualifiedShare;
+  const foreignQd15 = allocation.qd15 * foreignQualifiedShare;
+  const foreignQd20 = allocation.qd20 * foreignQualifiedShare;
+  const adjustedForeignQualifiedDividends = foreignQd15 * 0.5357 + foreignQd20 * 0.7143;
+  const passiveForeignNonqualifiedDividends = Math.max(0, builder.dividendsForeign - builder.qualifiedDividendsForeign);
+  const unsupportedCapitalAuto = hasForeignCapitalActivity;
+  const line1aCapitalPortion = unsupportedCapitalAuto ? manualLine1aCapital : 0;
+  const adjustedForeignCapitalLoss = unsupportedCapitalAuto ? manualLine5Loss : 0;
 
-  const line1a = passiveCapital.line1aCapitalPortion
-    + passiveCapital.adjustedForeignQualifiedDividends
-    + passiveCapital.passiveForeignNonqualifiedDividends
+  const line1a = line1aCapitalPortion
+    + adjustedForeignQualifiedDividends
+    + passiveForeignNonqualifiedDividends
     + builder.interestForeign
     + builder.foreignPassiveOther;
   const line2 = builder.directPassiveDeductions;
@@ -3179,7 +3193,7 @@ function computeAmtPassiveForm1116(builder, amtCalc, options = {}) {
   const line3g = line3c * line3f;
   const line4a = builder.mortgageInterest * ratio;
   const line4b = 0;
-  const line5 = passiveCapital.adjustedForeignCapitalLoss;
+  const line5 = adjustedForeignCapitalLoss;
   const line6 = line2 + line3g + line4a + line4b + line5;
   const line7 = Math.max(0, line1a - line6);
   const line8 = builder.ftaxPassiveGains + builder.ftaxPassiveDividends + builder.ftaxPassiveInterest + builder.ftaxPassiveOther;
@@ -3194,7 +3208,7 @@ function computeAmtPassiveForm1116(builder, amtCalc, options = {}) {
   const regularForm = computeBuilderForm1116(builder, calculateSummaryTax(builderToSummaryInputs(builder)), "passive");
   const line17 = simplifiedElection ? regularForm.line17 : line15 + line16;
 
-  const foreignPreferential = passiveCapital.adjustedForeignLongTerm + passiveCapital.adjustedForeignQualifiedDividends + passiveCapital.adjustedForeignCapitalLoss;
+  const foreignPreferential = Math.max(0, builder.ltcgForeign - Math.max(0, -builder.stcgForeign)) + builder.qualifiedDividendsForeign;
   const line18AdjustmentException = foreignPreferential < 20000 && amtCalc.part3.line17 <= AMT_26_RATE_CEILING_2025_MFJ;
   const mustUseAmtLine18Worksheet = amtCalc.part3Required
     && amtCalc.part3.line38 < amtCalc.part3.line39
@@ -3237,7 +3251,20 @@ function computeAmtPassiveForm1116(builder, amtCalc, options = {}) {
   return {
     simplifiedElection,
     regularForm,
-    support: passiveCapital,
+    support: {
+      adjustedForeignQualifiedDividends,
+      passiveForeignNonqualifiedDividends,
+      line1aCapitalPortion,
+      adjustedForeignCapitalLoss,
+      interestForeign: builder.interestForeign,
+      foreignPassiveOther: builder.foreignPassiveOther,
+      foreignQd0,
+      foreignQd15,
+      foreignQd20,
+      unsupportedCapitalAuto,
+      manualLine1aCapital,
+      manualLine5Loss
+    },
     mustUseAmtLine18Worksheet,
     line18AdjustmentException,
     foreignPreferential,
@@ -3250,7 +3277,13 @@ function computeAmtPassiveForm1116(builder, amtCalc, options = {}) {
 
 function getAmt1116Rows(data) {
   return [
-    ["Line 1a", toMoney(data.line1a), "Foreign passive income after the AMT passive qualified-dividend and capital-gain adjustments."],
+    ["Line 1a", toMoney(data.line1a), data.support.unsupportedCapitalAuto
+      ? `Line 1a is currently using manual AMT capital-gain amount ${toMoney(data.support.line1aCapitalPortion)} + AMT-adjusted foreign qualified dividends ${toMoney(data.support.adjustedForeignQualifiedDividends)} + foreign nonqualified dividends ${toMoney(data.support.passiveForeignNonqualifiedDividends)} + foreign interest ${toMoney(data.support.interestForeign)} + foreign passive other income ${toMoney(data.support.foreignPassiveOther)}.`
+      : "Foreign passive income after AMT qualified-dividend adjustments."],
+    ["Line 1a capital-gain portion", toMoney(data.support.line1aCapitalPortion), data.support.unsupportedCapitalAuto
+      ? "Manual input. The app no longer auto-computes AMT capital-gain adjustments for line 1a when foreign capital gains or losses are present, because that requires Worksheet A, Worksheet B, or Pub. 514 logic."
+      : "0 because no foreign capital-gain adjustment was required under the current inputs."],
+    ["Line 1a qualified-dividend portion", toMoney(data.support.adjustedForeignQualifiedDividends), `AMT QD adjustment uses 0% excluded, 15% × 0.5357, 20% × 0.7143. Current AMT foreign QD buckets: 0% ${toMoney(data.support.foreignQd0)}, 15% ${toMoney(data.support.foreignQd15)}, 20% ${toMoney(data.support.foreignQd20)}.`],
     ["Line 2", toMoney(data.line2), "Direct passive-basket deductions from the Return Builder."],
     ["Line 3a", toMoney(data.line3a), "SALT + other itemized deductions apportioned under Form 1116."],
     ["Line 3c", toMoney(data.line3c), "Line 3a minus line 3b."],
@@ -3259,7 +3292,9 @@ function getAmt1116Rows(data) {
     ["Line 3f", data.line3f.toFixed(6), "Line 3d divided by line 3e."],
     ["Line 3g", toMoney(data.line3g), "Line 3c multiplied by line 3f."],
     ["Line 4a", toMoney(data.line4a), "Mortgage interest apportioned using the gross-income ratio."],
-    ["Line 5", toMoney(data.line5), "Foreign capital-loss adjustment carried into AMT Form 1116."],
+    ["Line 5", toMoney(data.line5), data.support.unsupportedCapitalAuto
+      ? "Manual input. The app no longer auto-computes the AMT foreign capital-loss adjustment for line 5 when foreign capital gains or losses are present."
+      : "0 because no AMT foreign capital-loss adjustment was required under the current inputs."],
     ["Line 6", toMoney(data.line6), "Total deductions and losses."],
     ["Line 7", toMoney(data.line7), "Foreign source taxable income in the passive basket."],
     ["Line 8", toMoney(data.line8), "Current-year foreign taxes paid or accrued in the passive basket."],
@@ -3310,10 +3345,14 @@ function recalcAmt1116Passive() {
   const builder = readBuilderInputs();
   const amtCalc = computeAmtCalculator(readAmtCalcInputs());
   const data = computeAmtPassiveForm1116(builder, amtCalc, {
-    simplifiedElection: (amt1116SimplifiedElectionInput?.value || "no") === "yes"
+    simplifiedElection: (amt1116SimplifiedElectionInput?.value || "no") === "yes",
+    manualLine1aCapital: parseNumber(amt1116ManualLine1aCapitalInput),
+    manualLine5Loss: parseNumber(amt1116ManualLine5LossInput)
   });
   if (amt1116Status) {
-    amt1116Status.textContent = `Computed from Return Builder passive-basket inputs and AMT Calculator Form 6251 values. Line 35 = ${toMoney(data.line35)}.`;
+    amt1116Status.textContent = data.support.unsupportedCapitalAuto
+      ? `Foreign capital gains or losses are present. AMT Form 1116 line 1a capital-gain amount and line 5 capital-loss adjustment now require manual input unless and until Worksheet A, Worksheet B, or Pub. 514 logic is implemented. Current line 35 = ${toMoney(data.line35)}.`
+      : `Computed from Return Builder passive-basket inputs and AMT Calculator Form 6251 values. Line 35 = ${toMoney(data.line35)}.`;
   }
   renderRows(amt1116Output, getAmt1116Rows(data));
   renderRows(amt1116Line18Output, getAmt1116Line18Rows(data));
@@ -3611,6 +3650,12 @@ function bindAmtCalcEvents() {
     amt1116SimplifiedElectionInput.addEventListener("input", recalcAmt1116Passive);
     amt1116SimplifiedElectionInput.addEventListener("change", recalcAmt1116Passive);
   }
+  [amt1116ManualLine1aCapitalInput, amt1116ManualLine5LossInput].forEach((input) => {
+    if (!input) return;
+    input.placeholder = "0";
+    input.addEventListener("input", recalcAmt1116Passive);
+    input.addEventListener("change", recalcAmt1116Passive);
+  });
 }
 
 function render1116Status(message) {
