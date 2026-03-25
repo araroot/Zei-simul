@@ -3286,7 +3286,7 @@ function getAmt1116Rows(data) {
     ["Line 1a capital-gain portion", toMoney(data.support.line1aCapitalPortion), data.support.unsupportedCapitalAuto
       ? "Manual input. The app no longer auto-computes AMT capital-gain adjustments for line 1a when foreign capital gains or losses are present, because that requires Worksheet A, Worksheet B, or Pub. 514 logic."
       : "0 because no foreign capital-gain adjustment was required under the current inputs."],
-    ["Line 1a qualified-dividend portion", toMoney(data.support.adjustedForeignQualifiedDividends), `AMT QD adjustment uses 0% excluded, 15% × 0.5357, 20% × 0.7143. Current AMT foreign QD buckets: 0% ${toMoney(data.support.foreignQd0)}, 15% ${toMoney(data.support.foreignQd15)}, 20% ${toMoney(data.support.foreignQd20)}.`],
+    ["Line 1a qualified-dividend portion", toMoney(data.support.adjustedForeignQualifiedDividends), `AMT qualified-dividend adjustment uses the IRS AMT factors: 0% excluded, 15% × 0.5357, 20% × 0.7143. Current AMT foreign QD buckets: 0% ${toMoney(data.support.foreignQd0)}, 15% ${toMoney(data.support.foreignQd15)}, 20% ${toMoney(data.support.foreignQd20)}.`],
     ["Line 2", toMoney(data.line2), "Direct passive-basket deductions from the Return Builder."],
     ["Line 3a", toMoney(data.line3a), "SALT + other itemized deductions apportioned under Form 1116."],
     ["Line 3c", toMoney(data.line3c), "Line 3a minus line 3b."],
@@ -3466,6 +3466,7 @@ function getRegularLine18Rows(data) {
 function getAmtLine18Rows(data) {
   return [
     ["Worksheet required", data.mustUseAmtLine18Worksheet ? "Yes" : "No", data.mustUseAmtLine18Worksheet ? "The special AMT line 18 worksheet is required under the current facts." : data.line18AdjustmentException ? "Adjustment exception is available; AMT line 18 falls back to Form 6251 line 4." : "The special AMT worksheet is not required under the current facts."],
+    ["Why not required", data.mustUseAmtLine18Worksheet ? "AMT worksheet is active" : data.part3.line17 <= 0 ? `Form 6251 Part III line 17 is ${toMoney(data.part3.line17)}, so the current AMT model does not activate the special line 18 reduction worksheet.` : data.part3.line38 >= data.part3.line39 ? `Form 6251 line 38 ${toMoney(data.part3.line38)} is not less than line 39 ${toMoney(data.part3.line39)}.` : "Current AMT model fell back to Form 6251 line 4."],
     ["Worksheet line 1", toMoney(data.line18Worksheet.line1), "Form 6251 line 4."],
     ["Worksheet line 4", toMoney(data.line18Worksheet.line4), "Form 6251 line 36."],
     ["Worksheet line 5", toMoney(data.line18Worksheet.line5), "Line 4 × 0.1071."],
