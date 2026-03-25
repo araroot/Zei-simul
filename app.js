@@ -431,6 +431,11 @@ const amtCalc6251Output = document.getElementById("amtcalc-6251-output");
 const amtCalcRegularWorksheetOutput = document.getElementById("amtcalc-regular-worksheet-output");
 const amtCalcAmtWorksheetOutput = document.getElementById("amtcalc-amt-worksheet-output");
 const amtCalcPart3Output = document.getElementById("amtcalc-part3-output");
+const amt1116SimplifiedElectionInput = document.getElementById("amt1116-simplified-election");
+const amt1116Status = document.getElementById("amt1116-status");
+const amt1116Output = document.getElementById("amt1116-output");
+const amt1116Line18Output = document.getElementById("amt1116-line18-output");
+const amt1116LimitOutput = document.getElementById("amt1116-limit-output");
 const builderMetricUsIncome = document.getElementById("builder-metric-us-income");
 const builderMetricForeignPassive = document.getElementById("builder-metric-foreign-passive");
 const builderMetricForeignGeneral = document.getElementById("builder-metric-foreign-general");
@@ -3144,6 +3149,177 @@ function computeAmtCalculator(inputs) {
   };
 }
 
+function computeAmtPassiveForm1116(builder, amtCalc, options = {}) {
+  const simplifiedElection = options.simplifiedElection === true;
+  const passiveGrossForRatio = getBuilderPassiveGrossIncome(builder);
+  const generalGrossForRatio = Math.max(0, builder.foreignGeneralIncome);
+  const worldwideGross = getBuilderWorldwideGrossIncome(builder);
+  const ratio = worldwideGross > 0 ? passiveGrossForRatio / worldwideGross : 0;
+
+  const amtBreakdown = {
+    atZero: amtCalc.part3.line23,
+    atFifteen: amtCalc.part3.line30,
+    atTwenty: amtCalc.part3.line33
+  };
+  const supportResult = { ltcgBreakdown: amtBreakdown };
+  const passiveCapital = computePassive1116CapitalSupport(builder, supportResult);
+
+  const line1a = passiveCapital.line1aCapitalPortion
+    + passiveCapital.adjustedForeignQualifiedDividends
+    + passiveCapital.passiveForeignNonqualifiedDividends
+    + builder.interestForeign
+    + builder.foreignPassiveOther;
+  const line2 = builder.directPassiveDeductions;
+  const line3a = builder.salt + builder.otherItemized;
+  const line3b = 0;
+  const line3c = Math.max(0, line3a - line3b);
+  const line3d = passiveGrossForRatio;
+  const line3e = worldwideGross;
+  const line3f = ratio;
+  const line3g = line3c * line3f;
+  const line4a = builder.mortgageInterest * ratio;
+  const line4b = 0;
+  const line5 = passiveCapital.adjustedForeignCapitalLoss;
+  const line6 = line2 + line3g + line4a + line4b + line5;
+  const line7 = Math.max(0, line1a - line6);
+  const line8 = builder.ftaxPassiveGains + builder.ftaxPassiveDividends + builder.ftaxPassiveInterest + builder.ftaxPassiveOther;
+  const line9 = line8;
+  const line10 = 0;
+  const line11 = line9 + line10;
+  const line12 = 0;
+  const line13 = 0;
+  const line14 = line11 - line12 + line13;
+  const line15 = line7;
+  const line16 = 0;
+  const regularForm = computeBuilderForm1116(builder, calculateSummaryTax(builderToSummaryInputs(builder)), "passive");
+  const line17 = simplifiedElection ? regularForm.line17 : line15 + line16;
+
+  const foreignPreferential = passiveCapital.adjustedForeignLongTerm + passiveCapital.adjustedForeignQualifiedDividends + passiveCapital.adjustedForeignCapitalLoss;
+  const line18AdjustmentException = foreignPreferential < 20000 && amtCalc.part3.line17 <= AMT_26_RATE_CEILING_2025_MFJ;
+  const mustUseAmtLine18Worksheet = amtCalc.part3Required
+    && amtCalc.part3.line38 < amtCalc.part3.line39
+    && amtCalc.part3.line17 > 0
+    && !line18AdjustmentException;
+
+  const line18Worksheet = {
+    line1: amtCalc.form6251.line4,
+    line2: 0,
+    line3: 0,
+    line4: mustUseAmtLine18Worksheet ? amtCalc.part3.line36 : 0,
+    line5: mustUseAmtLine18Worksheet ? amtCalc.part3.line36 * 0.1071 : 0,
+    line6: mustUseAmtLine18Worksheet ? amtCalc.part3.line33 : 0,
+    line7: mustUseAmtLine18Worksheet ? amtCalc.part3.line33 * 0.2857 : 0,
+    line8: mustUseAmtLine18Worksheet ? amtCalc.part3.line30 : 0,
+    line9: mustUseAmtLine18Worksheet ? amtCalc.part3.line30 * 0.4643 : 0,
+    line10: mustUseAmtLine18Worksheet ? amtCalc.part3.line23 : 0
+  };
+  line18Worksheet.line11 = line18Worksheet.line3 + line18Worksheet.line5 + line18Worksheet.line7 + line18Worksheet.line9 + line18Worksheet.line10;
+  line18Worksheet.line12 = mustUseAmtLine18Worksheet ? Math.max(0, line18Worksheet.line1 - line18Worksheet.line11) : Math.max(0, amtCalc.form6251.line4);
+
+  const line18 = line18Worksheet.line12;
+  const line19 = line18 > 0 ? Math.min(1, line17 / line18) : 0;
+  const line20 = amtCalc.form6251.line7;
+  const line21 = line20 * line19;
+  const line22 = 0;
+  const line23 = line21 + line22;
+  const line24 = Math.min(line14, line23);
+
+  const line27 = line24;
+  const line28 = 0;
+  const line29 = line27 + line28;
+  const line30 = 0;
+  const line31 = line29 - line30;
+  const line32 = line31;
+  const line33 = line32;
+  const line34 = 0;
+  const line35 = line33 - line34;
+
+  return {
+    simplifiedElection,
+    regularForm,
+    support: passiveCapital,
+    mustUseAmtLine18Worksheet,
+    line18AdjustmentException,
+    foreignPreferential,
+    line1a, line2, line3a, line3b, line3c, line3d, line3e, line3f, line3g, line4a, line4b, line5, line6,
+    line7, line8, line9, line10, line11, line12, line13, line14, line15, line16, line17,
+    line18Worksheet, line18, line19, line20, line21, line22, line23, line24,
+    line27, line28, line29, line30, line31, line32, line33, line34, line35
+  };
+}
+
+function getAmt1116Rows(data) {
+  return [
+    ["Line 1a", toMoney(data.line1a), "Foreign passive income after the AMT passive qualified-dividend and capital-gain adjustments."],
+    ["Line 2", toMoney(data.line2), "Direct passive-basket deductions from the Return Builder."],
+    ["Line 3a", toMoney(data.line3a), "SALT + other itemized deductions apportioned under Form 1116."],
+    ["Line 3c", toMoney(data.line3c), "Line 3a minus line 3b."],
+    ["Line 3d", toMoney(data.line3d), "Foreign passive gross income before losses, from the Return Builder."],
+    ["Line 3e", toMoney(data.line3e), "Worldwide gross income before losses, from the Return Builder."],
+    ["Line 3f", data.line3f.toFixed(6), "Line 3d divided by line 3e."],
+    ["Line 3g", toMoney(data.line3g), "Line 3c multiplied by line 3f."],
+    ["Line 4a", toMoney(data.line4a), "Mortgage interest apportioned using the gross-income ratio."],
+    ["Line 5", toMoney(data.line5), "Foreign capital-loss adjustment carried into AMT Form 1116."],
+    ["Line 6", toMoney(data.line6), "Total deductions and losses."],
+    ["Line 7", toMoney(data.line7), "Foreign source taxable income in the passive basket."],
+    ["Line 8", toMoney(data.line8), "Current-year foreign taxes paid or accrued in the passive basket."],
+    ["Line 9", toMoney(data.line9), "Carry line 8."],
+    ["Line 10", toMoney(data.line10), "AMTFTC carryover is set to 0 for 2025 in this tab."],
+    ["Line 11", toMoney(data.line11), "Line 9 plus line 10."],
+    ["Line 14", toMoney(data.line14), "Foreign taxes available for the AMT credit."],
+    ["Line 15", toMoney(data.line15), "Passive foreign source taxable income before any simplified-limitation election effect."],
+    ["Line 17", toMoney(data.line17), data.simplifiedElection ? `Simplified limitation election is on, so line 17 follows regular Form 1116 passive line 17 = ${toMoney(data.regularForm.line17)}.` : "No simplified limitation election, so line 17 follows AMT Form 1116 line 15."]
+  ];
+}
+
+function getAmt1116Line18Rows(data) {
+  return [
+    ["Worksheet required", data.mustUseAmtLine18Worksheet ? "Yes" : "No", data.mustUseAmtLine18Worksheet ? "Form 6251 Part III is active, line 38 is less than line 39, line 17 is positive, and the adjustment exception does not apply." : data.line18AdjustmentException ? "Adjustment exception applies, so line 18 uses Form 6251 line 4 directly." : "The AMT line 18 worksheet is not required under the current facts."],
+    ["Foreign preferential income tested for adjustment exception", toMoney(data.foreignPreferential), "Adjusted foreign long-term gains + adjusted foreign qualified dividends + adjusted foreign capital-loss adjustment."],
+    ["Worksheet line 1", toMoney(data.line18Worksheet.line1), "Form 6251 line 4."],
+    ["Worksheet line 4", toMoney(data.line18Worksheet.line4), "Form 6251 line 36."],
+    ["Worksheet line 5", toMoney(data.line18Worksheet.line5), "Line 4 × 0.1071."],
+    ["Worksheet line 6", toMoney(data.line18Worksheet.line6), "Form 6251 line 33."],
+    ["Worksheet line 7", toMoney(data.line18Worksheet.line7), "Line 6 × 0.2857."],
+    ["Worksheet line 8", toMoney(data.line18Worksheet.line8), "Form 6251 line 30."],
+    ["Worksheet line 9", toMoney(data.line18Worksheet.line9), "Line 8 × 0.4643."],
+    ["Worksheet line 10", toMoney(data.line18Worksheet.line10), "Form 6251 line 23."],
+    ["Worksheet line 11", toMoney(data.line18Worksheet.line11), "Line 3 + line 5 + line 7 + line 9 + line 10."],
+    ["Worksheet line 12 / Form 1116 line 18", toMoney(data.line18), data.mustUseAmtLine18Worksheet ? "Line 1 minus line 11." : "Using Form 6251 line 4 because the special AMT worksheet for line 18 is not required."]
+  ];
+}
+
+function getAmt1116LimitRows(data) {
+  return [
+    ["Line 18", toMoney(data.line18), "AMT adjusted taxable income denominator."],
+    ["Line 19", data.line19.toFixed(9), "Line 17 divided by line 18, capped at 1."],
+    ["Line 20", toMoney(data.line20), "Form 6251 line 7."],
+    ["Line 21", toMoney(data.line21), "Line 20 multiplied by line 19."],
+    ["Line 24", toMoney(data.line24), "Smaller of line 14 or line 23."],
+    ["Line 27", toMoney(data.line27), "Current-year AMT passive credit carried to Part IV."],
+    ["Line 29", toMoney(data.line29), "Line 27 plus line 28."],
+    ["Line 31", toMoney(data.line31), "Line 29 minus line 30."],
+    ["Line 32", toMoney(data.line32), "Carry line 31."],
+    ["Line 33", toMoney(data.line33), "Carry line 32."],
+    ["Line 35", toMoney(data.line35), "This is the AMT passive credit amount that can flow to Form 6251 line 8 when this is the first AMT Form 1116."]
+  ];
+}
+
+function recalcAmt1116Passive() {
+  if (!amt1116Output) return;
+  const builder = readBuilderInputs();
+  const amtCalc = computeAmtCalculator(readAmtCalcInputs());
+  const data = computeAmtPassiveForm1116(builder, amtCalc, {
+    simplifiedElection: (amt1116SimplifiedElectionInput?.value || "no") === "yes"
+  });
+  if (amt1116Status) {
+    amt1116Status.textContent = `Computed from Return Builder passive-basket inputs and AMT Calculator Form 6251 values. Line 35 = ${toMoney(data.line35)}.`;
+  }
+  renderRows(amt1116Output, getAmt1116Rows(data));
+  renderRows(amt1116Line18Output, getAmt1116Line18Rows(data));
+  renderRows(amt1116LimitOutput, getAmt1116LimitRows(data));
+}
+
 function getAmtCalcSummaryRows(calc) {
   return [
     ["Selected regular worksheet", calc.regularWorksheet.type === "none" ? "None" : calc.regularWorksheet.type === "qdcg" ? "QDCG worksheet" : "Schedule D worksheet", "This drives Form 6251 lines 20 and 27."],
@@ -3295,6 +3471,7 @@ function recalcBuilder() {
   renderRows(builder1116GeneralOutput, getBuilder1116Rows(builder, result, "general"));
   renderQdcgWorksheet(result, builder);
   renderScheduleDTaxWorksheet(result, builder);
+  recalcAmt1116Passive();
   renderBuilderAssumptions();
   updateBuilderMetrics(builder, result);
   setBuilderPdfStatus("Ready to generate a combined packet with Form 1040, Form 6251, Form 8960, and both Form 1116 forms.");
@@ -3430,6 +3607,10 @@ function bindAmtCalcEvents() {
     input.addEventListener("change", recalcAmtCalculator);
     input.addEventListener("focus", () => input.select?.());
   });
+  if (amt1116SimplifiedElectionInput) {
+    amt1116SimplifiedElectionInput.addEventListener("input", recalcAmt1116Passive);
+    amt1116SimplifiedElectionInput.addEventListener("change", recalcAmt1116Passive);
+  }
 }
 
 function render1116Status(message) {

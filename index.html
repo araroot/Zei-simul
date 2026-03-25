@@ -35,6 +35,7 @@
         <button class="top-tab" data-panel="panel-qdcg">QDCG Worksheet</button>
         <button class="top-tab" data-panel="panel-schedule-d-worksheet">Schedule D Worksheet</button>
         <button class="top-tab" data-panel="panel-amt-calculator">AMT Calculator</button>
+        <button class="top-tab" data-panel="panel-amt-form1116-passive">AMT Form 1116 Passive</button>
       </nav>
 
       <main>
@@ -791,6 +792,67 @@
                     </tr>
                   </thead>
                   <tbody id="amtcalc-part3-output"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section id="panel-amt-form1116-passive" class="tab-panel">
+          <div class="stack">
+            <section class="card">
+              <h2>AMT Form 1116 Passive</h2>
+              <p class="hint">This tab reads foreign passive income, taxes, and deductions from the Return Builder and reads Form 6251 values from the AMT Calculator. It is focused on the passive basket and traces the amount that can flow to Form 6251 line 8.</p>
+              <div class="summary-grid">
+                <label class="field-inline"><span>Simplified limitation election</span><select id="amt1116-simplified-election"><option value="no">No</option><option value="yes">Yes</option></select></label>
+              </div>
+              <div id="amt1116-status" class="status-box"></div>
+            </section>
+
+            <section class="card">
+              <h2>Part I and II</h2>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>AMT Form 1116 Line</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="amt1116-output"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>AMT Line 18 Worksheet</h2>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Worksheet Line</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="amt1116-line18-output"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Part III and Part IV</h2>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>AMT Form 1116 Limit / Credit Line</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="amt1116-limit-output"></tbody>
                 </table>
               </div>
             </section>
