@@ -438,6 +438,9 @@ const amt1116Status = document.getElementById("amt1116-status");
 const amt1116Output = document.getElementById("amt1116-output");
 const amt1116Line18Output = document.getElementById("amt1116-line18-output");
 const amt1116LimitOutput = document.getElementById("amt1116-limit-output");
+const line18Status = document.getElementById("line18-status");
+const line18RegularOutput = document.getElementById("line18-regular-output");
+const line18AmtOutput = document.getElementById("line18-amt-output");
 const builderMetricUsIncome = document.getElementById("builder-metric-us-income");
 const builderMetricForeignPassive = document.getElementById("builder-metric-foreign-passive");
 const builderMetricForeignGeneral = document.getElementById("builder-metric-foreign-general");
@@ -3359,6 +3362,142 @@ function recalcAmt1116Passive() {
   renderRows(amt1116LimitOutput, getAmt1116LimitRows(data));
 }
 
+function computeRegularLine18Worksheet(builder, result) {
+  const scheduleDInputs = readScheduleDWorksheetInputs();
+  const passiveSnapshot = buildPassiveWorksheetSnapshot({
+    taxableIncome: result.taxableIncome,
+    qualifiedDividends: builder.qualifiedDividendsUs + builder.qualifiedDividendsForeign,
+    stcg: builder.stcgUs + builder.stcgForeign,
+    ltcg: builder.ltcgUs + builder.ltcgForeign,
+    gain25: scheduleDInputs.line19,
+    gain28: scheduleDInputs.line18,
+    line4g: scheduleDInputs.line3,
+    line4e: scheduleDInputs.line4,
+    worksheetType: "auto"
+  });
+  const foreignNetCapitalGain = Math.max(0, builder.ltcgForeign - Math.max(0, -builder.stcgForeign));
+  const foreignQualifiedDividends = builder.qualifiedDividendsForeign;
+  const qualifiesAdjustmentException = foreignNetCapitalGain + foreignQualifiedDividends < 20000
+    && ((passiveSnapshot.type === "qdcg" && passiveSnapshot.qdcg.line5 <= 394600)
+      || (passiveSnapshot.type === "schedule-d" && passiveSnapshot.scheduleD.line18 <= 394600));
+  const mustCompleteWorksheet = (passiveSnapshot.type === "qdcg"
+      && passiveSnapshot.qdcg.line5 > 0
+      && passiveSnapshot.qdcg.line23 < passiveSnapshot.qdcg.line24)
+    || (passiveSnapshot.type === "schedule-d"
+      && passiveSnapshot.scheduleD.line18 > 0
+      && passiveSnapshot.scheduleD.line45 < passiveSnapshot.scheduleD.line46);
+
+  let worksheet;
+  if (!mustCompleteWorksheet || qualifiesAdjustmentException) {
+    worksheet = {
+      type: passiveSnapshot.type,
+      required: false,
+      exception: qualifiesAdjustmentException,
+      line1: result.taxableIncome,
+      line2: 0, line3: 0, line4: 0, line5: 0, line6: 0, line7: 0, line8: 0, line9: 0, line10: 0, line11: 0,
+      line12: Math.max(0, result.taxableIncome)
+    };
+  } else if (passiveSnapshot.type === "schedule-d") {
+    worksheet = {
+      type: "schedule-d",
+      required: true,
+      exception: false,
+      line1: result.taxableIncome,
+      line2: passiveSnapshot.scheduleD.line42,
+      line3: passiveSnapshot.scheduleD.line42 * 0.2432,
+      line4: passiveSnapshot.scheduleD.line39,
+      line5: passiveSnapshot.scheduleD.line39 * 0.3243,
+      line6: passiveSnapshot.scheduleD.line33,
+      line7: passiveSnapshot.scheduleD.line33 * 0.4595,
+      line8: passiveSnapshot.scheduleD.line30,
+      line9: passiveSnapshot.scheduleD.line30 * 0.5946,
+      line10: passiveSnapshot.scheduleD.line22,
+      line11: 0,
+      line12: 0
+    };
+    worksheet.line11 = worksheet.line3 + worksheet.line5 + worksheet.line7 + worksheet.line9 + worksheet.line10;
+    worksheet.line12 = Math.max(0, worksheet.line1 - worksheet.line11);
+  } else {
+    worksheet = {
+      type: "qdcg",
+      required: true,
+      exception: false,
+      line1: result.taxableIncome,
+      line2: 0,
+      line3: 0,
+      line4: 0,
+      line5: 0,
+      line6: passiveSnapshot.qdcg.line20,
+      line7: passiveSnapshot.qdcg.line20 * 0.4595,
+      line8: passiveSnapshot.qdcg.line17,
+      line9: passiveSnapshot.qdcg.line17 * 0.5946,
+      line10: passiveSnapshot.qdcg.line9,
+      line11: 0,
+      line12: 0
+    };
+    worksheet.line11 = worksheet.line3 + worksheet.line5 + worksheet.line7 + worksheet.line9 + worksheet.line10;
+    worksheet.line12 = Math.max(0, worksheet.line1 - worksheet.line11);
+  }
+
+  return { passiveSnapshot, qualifiesAdjustmentException, mustCompleteWorksheet, foreignNetCapitalGain, foreignQualifiedDividends, worksheet };
+}
+
+function getRegularLine18Rows(data) {
+  return [
+    ["Worksheet type", data.passiveSnapshot.type === "none" ? "None" : data.passiveSnapshot.type === "qdcg" ? "QDCG worksheet path" : "Schedule D worksheet path", "Detected from current Return Builder and Schedule D / QDCG inputs."],
+    ["Worksheet required", data.worksheet.required ? "Yes" : "No", data.worksheet.required ? "The regular Form 1116 line 18 worksheet is required under the current facts." : data.qualifiesAdjustmentException ? "Adjustment exception is available; line 18 falls back to taxable income." : "No worksheet trigger is active under the current facts."],
+    ["Foreign source net capital gain", toMoney(data.foreignNetCapitalGain), "Foreign source net long-term capital gain minus foreign source net short-term capital loss."],
+    ["Foreign source qualified dividends", toMoney(data.foreignQualifiedDividends), "Foreign qualified dividends from the Return Builder."],
+    ["Worksheet line 1", toMoney(data.worksheet.line1), "Taxable income."],
+    ["Worksheet line 2", toMoney(data.worksheet.line2), data.passiveSnapshot.type === "schedule-d" ? "Schedule D worksheet line 42." : "Skipped for the QDCG path."],
+    ["Worksheet line 3", toMoney(data.worksheet.line3), "Line 2 × 0.2432."],
+    ["Worksheet line 4", toMoney(data.worksheet.line4), data.passiveSnapshot.type === "schedule-d" ? "Schedule D worksheet line 39." : "Skipped for the QDCG path."],
+    ["Worksheet line 5", toMoney(data.worksheet.line5), "Line 4 × 0.3243."],
+    ["Worksheet line 6", toMoney(data.worksheet.line6), data.passiveSnapshot.type === "schedule-d" ? "Schedule D worksheet line 33." : data.passiveSnapshot.type === "qdcg" ? "QDCG worksheet line 20." : "No worksheet path."],
+    ["Worksheet line 7", toMoney(data.worksheet.line7), "Line 6 × 0.4595."],
+    ["Worksheet line 8", toMoney(data.worksheet.line8), data.passiveSnapshot.type === "schedule-d" ? "Schedule D worksheet line 30." : data.passiveSnapshot.type === "qdcg" ? "QDCG worksheet line 17." : "No worksheet path."],
+    ["Worksheet line 9", toMoney(data.worksheet.line9), "Line 8 × 0.5946."],
+    ["Worksheet line 10", toMoney(data.worksheet.line10), data.passiveSnapshot.type === "schedule-d" ? "Schedule D worksheet line 22." : data.passiveSnapshot.type === "qdcg" ? "QDCG worksheet line 9." : "No worksheet path."],
+    ["Worksheet line 11", toMoney(data.worksheet.line11), "Line 3 + line 5 + line 7 + line 9 + line 10."],
+    ["Worksheet line 12 / Form 1116 line 18", toMoney(data.worksheet.line12), data.worksheet.required ? "Line 1 minus line 11." : "Taxable income is carried to Form 1116 line 18 because the worksheet was not required or the adjustment exception applies."]
+  ];
+}
+
+function getAmtLine18Rows(data) {
+  return [
+    ["Worksheet required", data.mustUseAmtLine18Worksheet ? "Yes" : "No", data.mustUseAmtLine18Worksheet ? "The special AMT line 18 worksheet is required under the current facts." : data.line18AdjustmentException ? "Adjustment exception is available; AMT line 18 falls back to Form 6251 line 4." : "The special AMT worksheet is not required under the current facts."],
+    ["Worksheet line 1", toMoney(data.line18Worksheet.line1), "Form 6251 line 4."],
+    ["Worksheet line 4", toMoney(data.line18Worksheet.line4), "Form 6251 line 36."],
+    ["Worksheet line 5", toMoney(data.line18Worksheet.line5), "Line 4 × 0.1071."],
+    ["Worksheet line 6", toMoney(data.line18Worksheet.line6), "Form 6251 line 33."],
+    ["Worksheet line 7", toMoney(data.line18Worksheet.line7), "Line 6 × 0.2857."],
+    ["Worksheet line 8", toMoney(data.line18Worksheet.line8), "Form 6251 line 30."],
+    ["Worksheet line 9", toMoney(data.line18Worksheet.line9), "Line 8 × 0.4643."],
+    ["Worksheet line 10", toMoney(data.line18Worksheet.line10), "Form 6251 line 23."],
+    ["Worksheet line 11", toMoney(data.line18Worksheet.line11), "Line 3 + line 5 + line 7 + line 9 + line 10."],
+    ["Worksheet line 12 / AMT Form 1116 line 18", toMoney(data.line18), data.mustUseAmtLine18Worksheet ? "Line 1 minus line 11." : "Form 6251 line 4 is carried to AMT Form 1116 line 18 because the special AMT worksheet was not required."]
+  ];
+}
+
+function recalcLine18Worksheets() {
+  if (!line18RegularOutput) return;
+  const builder = readBuilderInputs();
+  const preliminaryResult = calculateSummaryTax(builderToSummaryInputs(builder));
+  const regular = computeRegularLine18Worksheet(builder, preliminaryResult);
+  const amtCalc = computeAmtCalculator(readAmtCalcInputs());
+  const amt1116 = computeAmtPassiveForm1116(builder, amtCalc, {
+    simplifiedElection: (amt1116SimplifiedElectionInput?.value || "no") === "yes",
+    manualLine1aCapital: parseNumber(amt1116ManualLine1aCapitalInput),
+    manualLine5Loss: parseNumber(amt1116ManualLine5LossInput)
+  });
+
+  if (line18Status) {
+    line18Status.textContent = `Regular Form 1116 line 18 = ${toMoney(regular.worksheet.line12)}. AMT Form 1116 line 18 = ${toMoney(amt1116.line18)}.`;
+  }
+  renderRows(line18RegularOutput, getRegularLine18Rows(regular));
+  renderRows(line18AmtOutput, getAmtLine18Rows(amt1116));
+}
+
 function getAmtCalcSummaryRows(calc) {
   return [
     ["Selected regular worksheet", calc.regularWorksheet.type === "none" ? "None" : calc.regularWorksheet.type === "qdcg" ? "QDCG worksheet" : "Schedule D worksheet", "This drives Form 6251 lines 20 and 27."],
@@ -3464,6 +3603,7 @@ function recalcAmtCalculator() {
   renderRows(amtCalcRegularWorksheetOutput, getAmtCalcWorksheetRows(calc.regularWorksheet, "Regular"));
   renderRows(amtCalcAmtWorksheetOutput, getAmtCalcWorksheetRows(calc.amtWorksheet, "AMT"));
   renderRows(amtCalcPart3Output, getAmtCalcPart3Rows(calc));
+  recalcLine18Worksheets();
 }
 
 function updateBuilderMetrics(builder, result) {
@@ -3511,6 +3651,7 @@ function recalcBuilder() {
   renderQdcgWorksheet(result, builder);
   renderScheduleDTaxWorksheet(result, builder);
   recalcAmt1116Passive();
+  recalcLine18Worksheets();
   renderBuilderAssumptions();
   updateBuilderMetrics(builder, result);
   setBuilderPdfStatus("Ready to generate a combined packet with Form 1040, Form 6251, Form 8960, and both Form 1116 forms.");

@@ -36,6 +36,7 @@
         <button class="top-tab" data-panel="panel-schedule-d-worksheet">Schedule D Worksheet</button>
         <button class="top-tab" data-panel="panel-amt-calculator">AMT Calculator</button>
         <button class="top-tab" data-panel="panel-amt-form1116-passive">AMT Form 1116 Passive</button>
+        <button class="top-tab" data-panel="panel-form1116-line18">Form 1116 Line 18</button>
       </nav>
 
       <main>
@@ -855,6 +856,48 @@
                     </tr>
                   </thead>
                   <tbody id="amt1116-limit-output"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section id="panel-form1116-line18" class="tab-panel">
+          <div class="stack">
+            <section class="card">
+              <h2>Form 1116 Line 18 Worksheet</h2>
+              <p class="hint">This tab builds both versions of the line 18 worksheet: the regular Form 1116 worksheet and the AMT-modified worksheet. The regular side reads Return Builder and the QDCG / Schedule D tabs. The AMT side reads the AMT Calculator and AMT Form 1116 Passive tabs.</p>
+              <div id="line18-status" class="status-box"></div>
+            </section>
+
+            <section class="card">
+              <h2>Regular Form 1116 Line 18 Worksheet</h2>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Worksheet Line</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="line18-regular-output"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>AMT Form 1116 Line 18 Worksheet</h2>
+              <div class="table-wrap">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>Worksheet Line</th>
+                      <th>Value</th>
+                      <th>How Derived</th>
+                    </tr>
+                  </thead>
+                  <tbody id="line18-amt-output"></tbody>
                 </table>
               </div>
             </section>
