@@ -160,6 +160,13 @@ th {
   gap: 14px;
 }
 
+.worksheet-side-by-side {
+  display: grid;
+  grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
 .row-label {
   text-align: left !important;
   font-weight: 700;
@@ -542,5 +549,9 @@ th {
 
   .builder-actionbar {
     position: static;
+  }
+
+  .worksheet-side-by-side {
+    grid-template-columns: 1fr;
   }
 }
