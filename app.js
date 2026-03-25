@@ -3615,9 +3615,9 @@ function getAmtCalcWorksheetRows(bundle, labelPrefix) {
 function getAmtCalcPart3Rows(calc) {
   return [
     ["Line 12", toMoney(calc.part3.line12), "Form 6251 line 6."],
-    ["Line 13", toMoney(calc.part3.line13), calc.amtWorksheet.type === "schedule-d" ? "AMT Schedule D Tax Worksheet line 13." : calc.amtWorksheet.type === "qdcg" ? "AMT QDCG worksheet line 4." : "Part III not required."],
+    ["Line 13", toMoney(calc.part3.line13), calc.amtWorksheet.type === "schedule-d" ? "AMT Schedule D Tax Worksheet line 13." : calc.amtWorksheet.type === "qdcg" ? "AMT QDCG worksheet line 4. The AMT calculator chose the QDCG path rather than the AMT Schedule D Tax Worksheet path." : "Part III not required."],
     ["Line 14", toMoney(calc.part3.line14), "AMT Schedule D line 19 (25% rate gain)."],
-    ["Line 15", toMoney(calc.part3.line15), calc.amtWorksheet.type === "schedule-d" ? "Smaller of line 13 + line 14, or AMT Schedule D Tax Worksheet line 10." : calc.amtWorksheet.type === "qdcg" ? "Because Schedule D Tax Worksheet is not used, line 15 equals line 13." : "Part III not required."],
+    ["Line 15", toMoney(calc.part3.line15), calc.amtWorksheet.type === "schedule-d" ? "Smaller of line 13 + line 14, or AMT Schedule D Tax Worksheet line 10." : calc.amtWorksheet.type === "qdcg" ? "The AMT calculator is on the QDCG path, not the AMT Schedule D Tax Worksheet path, so line 15 follows line 13 under the Form 6251 instructions." : "Part III not required."],
     ["Line 16", toMoney(calc.part3.line16), "Smaller of line 12 or line 15."],
     ["Line 17", toMoney(calc.part3.line17), "Line 12 minus line 16."],
     ["Line 18", toMoney(calc.part3.line18), "26% / 28% AMT tax on line 17."],
