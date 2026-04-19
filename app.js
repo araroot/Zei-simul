@@ -4878,3 +4878,24 @@ if (document.readyState === "loading") {
 } else {
   boot();
 }
+
+// Separate initialization for India vs US simulation (runs independently)
+window.addEventListener('load', function() {
+  console.log('India vs US: Initializing separately');
+  const calcButton = document.getElementById('india-us-calculate');
+  if (calcButton) {
+    console.log('India vs US: Button found, attaching click handler');
+    calcButton.addEventListener('click', function() {
+      console.log('India vs US: Button clicked!');
+      runIndiaUSSimulation();
+    });
+
+    // Auto-run on load
+    setTimeout(function() {
+      console.log('India vs US: Auto-running simulation');
+      runIndiaUSSimulation();
+    }, 500);
+  } else {
+    console.log('India vs US: Button NOT found');
+  }
+});
