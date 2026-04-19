@@ -4728,12 +4728,12 @@ function updateStcgLtcgDisplay() {
 }
 
 function runIndiaUSSimulation() {
-  const startPF = parseFloat(document.getElementById('india-us-start-pf').value) || 7000000;
+  const startPF = parseFloat(document.getElementById('india-us-start-pf').value) || 6000000;
   const stcgPct = parseFloat(document.getElementById('india-us-stcg-slider').value) || 20;
   const ltcgPct = 100 - stcgPct;
   const indiaStcgRate = parseFloat(document.getElementById('india-us-india-stcg-rate').value) || 22;
   const indiaLtcgRate = parseFloat(document.getElementById('india-us-india-ltcg-rate').value) || 14;
-  const growthRate = parseFloat(document.getElementById('india-us-growth-rate').value) || 15;
+  const growthRate = parseFloat(document.getElementById('india-us-growth-rate').value) || 12;
 
   const years = 20;
   const results = [];
