@@ -4787,9 +4787,23 @@ function renderIndiaUSResults(results, usTotalTax, indiaTotalTax, startPF) {
 
   if (!output || !summary) return;
 
+  // Check if a value crosses a 5M milestone
+  function crossesMilestone(prevValue, currentValue) {
+    const prevMilestone = Math.floor(prevValue / 5000000);
+    const currMilestone = Math.floor(currentValue / 5000000);
+    return currMilestone > prevMilestone && currMilestone >= 2; // Start highlighting from 10M
+  }
+
   // Render year-by-year results
-  const rows = results.map(r => `
-    <tr>
+  const rows = results.map((r, index) => {
+    const prevUS = index > 0 ? results[index - 1].usAfterTax : startPF;
+    const prevIndia = index > 0 ? results[index - 1].indiaAfterTax : startPF;
+
+    const isMilestone = crossesMilestone(prevUS, r.usAfterTax) || crossesMilestone(prevIndia, r.indiaAfterTax);
+    const rowStyle = isMilestone ? ' style="background-color: #fffacd;"' : '';
+
+    return `
+    <tr${rowStyle}>
       <td>Year ${r.year}</td>
       <td>${currency.format(Math.round(r.usPF))}</td>
       <td>${currency.format(Math.round(r.usTax))}</td>
@@ -4799,7 +4813,8 @@ function renderIndiaUSResults(results, usTotalTax, indiaTotalTax, startPF) {
       <td>${currency.format(Math.round(r.indiaAfterTax))}</td>
       <td style="color: ${r.difference >= 0 ? 'green' : 'red'}">${r.difference >= 0 ? '+' : ''}${currency.format(Math.round(r.difference))}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   output.innerHTML = rows;
 
