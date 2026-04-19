@@ -599,8 +599,10 @@
 
               <div class="summary-grid">
                 <label class="field-inline"><span>Starting Portfolio (USD)</span><input id="india-us-start-pf" type="number" step="1" value="4000000" /></label>
-                <label class="field-inline"><span>STCG % (Short-term capital gains)</span><input id="india-us-stcg-pct" type="number" step="1" min="0" max="100" value="20" /></label>
-                <label class="field-inline"><span>LTCG % (Long-term capital gains)</span><input id="india-us-ltcg-pct" type="number" step="1" min="0" max="100" value="80" /></label>
+                <label class="field-inline">
+                  <span>Capital Gains Mix: <strong id="india-us-stcg-display">20%</strong> STCG / <strong id="india-us-ltcg-display">80%</strong> LTCG</span>
+                  <input id="india-us-stcg-slider" type="range" min="0" max="100" value="20" style="width: 100%;" />
+                </label>
                 <label class="field-inline"><span>India STCG Tax Rate %</span><input id="india-us-india-stcg-rate" type="number" step="0.1" value="22" /></label>
                 <label class="field-inline"><span>India LTCG Tax Rate %</span><input id="india-us-india-ltcg-rate" type="number" step="0.1" value="14" /></label>
                 <label class="field-inline"><span>Annual Portfolio Growth Rate %</span><input id="india-us-growth-rate" type="number" step="0.1" value="10" /></label>

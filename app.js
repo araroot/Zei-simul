@@ -4714,19 +4714,26 @@ function calculateIndiaTax(stcgAmount, ltcgAmount, stcgRate, ltcgRate) {
   return stcgTax + ltcgTax;
 }
 
+function updateStcgLtcgDisplay() {
+  const slider = document.getElementById('india-us-stcg-slider');
+  const stcgDisplay = document.getElementById('india-us-stcg-display');
+  const ltcgDisplay = document.getElementById('india-us-ltcg-display');
+
+  if (slider && stcgDisplay && ltcgDisplay) {
+    const stcgPct = parseFloat(slider.value);
+    const ltcgPct = 100 - stcgPct;
+    stcgDisplay.textContent = stcgPct + '%';
+    ltcgDisplay.textContent = ltcgPct + '%';
+  }
+}
+
 function runIndiaUSSimulation() {
   const startPF = parseFloat(document.getElementById('india-us-start-pf').value) || 4000000;
-  const stcgPct = parseFloat(document.getElementById('india-us-stcg-pct').value) || 20;
-  const ltcgPct = parseFloat(document.getElementById('india-us-ltcg-pct').value) || 80;
+  const stcgPct = parseFloat(document.getElementById('india-us-stcg-slider').value) || 20;
+  const ltcgPct = 100 - stcgPct;
   const indiaStcgRate = parseFloat(document.getElementById('india-us-india-stcg-rate').value) || 22;
   const indiaLtcgRate = parseFloat(document.getElementById('india-us-india-ltcg-rate').value) || 14;
   const growthRate = parseFloat(document.getElementById('india-us-growth-rate').value) || 10;
-
-  // Validate percentages
-  if (stcgPct + ltcgPct !== 100) {
-    alert('STCG % and LTCG % must add up to 100%');
-    return;
-  }
 
   const years = 20;
   const results = [];
@@ -4883,6 +4890,14 @@ if (document.readyState === "loading") {
 window.addEventListener('load', function() {
   console.log('India vs US: Initializing separately');
   const calcButton = document.getElementById('india-us-calculate');
+  const slider = document.getElementById('india-us-stcg-slider');
+
+  // Update display when slider moves
+  if (slider) {
+    slider.addEventListener('input', updateStcgLtcgDisplay);
+    updateStcgLtcgDisplay(); // Initialize display
+  }
+
   if (calcButton) {
     console.log('India vs US: Button found, attaching click handler');
     calcButton.addEventListener('click', function() {
