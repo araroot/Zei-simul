@@ -4784,13 +4784,13 @@ function renderIndiaUSResults(results, usTotalTax, indiaTotalTax, startPF) {
   const rows = results.map(r => `
     <tr>
       <td>Year ${r.year}</td>
-      <td>${USD_INT.format(Math.round(r.usPF))}</td>
-      <td>${USD_INT.format(Math.round(r.usTax))}</td>
-      <td>${USD_INT.format(Math.round(r.usAfterTax))}</td>
-      <td>${USD_INT.format(Math.round(r.indiaPF))}</td>
-      <td>${USD_INT.format(Math.round(r.indiaTax))}</td>
-      <td>${USD_INT.format(Math.round(r.indiaAfterTax))}</td>
-      <td style="color: ${r.difference >= 0 ? 'green' : 'red'}">${r.difference >= 0 ? '+' : ''}${USD_INT.format(Math.round(r.difference))}</td>
+      <td>${currency.format(Math.round(r.usPF))}</td>
+      <td>${currency.format(Math.round(r.usTax))}</td>
+      <td>${currency.format(Math.round(r.usAfterTax))}</td>
+      <td>${currency.format(Math.round(r.indiaPF))}</td>
+      <td>${currency.format(Math.round(r.indiaTax))}</td>
+      <td>${currency.format(Math.round(r.indiaAfterTax))}</td>
+      <td style="color: ${r.difference >= 0 ? 'green' : 'red'}">${r.difference >= 0 ? '+' : ''}${currency.format(Math.round(r.difference))}</td>
     </tr>
   `).join('');
 
@@ -4808,21 +4808,21 @@ function renderIndiaUSResults(results, usTotalTax, indiaTotalTax, startPF) {
   summary.innerHTML = `
     <tr>
       <td>Starting Portfolio</td>
-      <td>${USD_INT.format(startPF)}</td>
-      <td>${USD_INT.format(startPF)}</td>
+      <td>${currency.format(startPF)}</td>
+      <td>${currency.format(startPF)}</td>
       <td>—</td>
     </tr>
     <tr>
       <td>Final Portfolio (Year 20)</td>
-      <td>${USD_INT.format(Math.round(finalUS))}</td>
-      <td>${USD_INT.format(Math.round(finalIndia))}</td>
-      <td style="color: ${totalDifference >= 0 ? 'green' : 'red'}">${totalDifference >= 0 ? '+' : ''}${USD_INT.format(Math.round(totalDifference))}</td>
+      <td>${currency.format(Math.round(finalUS))}</td>
+      <td>${currency.format(Math.round(finalIndia))}</td>
+      <td style="color: ${totalDifference >= 0 ? 'green' : 'red'}">${totalDifference >= 0 ? '+' : ''}${currency.format(Math.round(totalDifference))}</td>
     </tr>
     <tr>
       <td>Total Tax Paid (20 years)</td>
-      <td>${USD_INT.format(Math.round(usTotalTax))}</td>
-      <td>${USD_INT.format(Math.round(indiaTotalTax))}</td>
-      <td style="color: ${indiaTotalTax < usTotalTax ? 'green' : 'red'}">${USD_INT.format(Math.round(indiaTotalTax - usTotalTax))}</td>
+      <td>${currency.format(Math.round(usTotalTax))}</td>
+      <td>${currency.format(Math.round(indiaTotalTax))}</td>
+      <td style="color: ${indiaTotalTax < usTotalTax ? 'green' : 'red'}">${currency.format(Math.round(indiaTotalTax - usTotalTax))}</td>
     </tr>
     <tr>
       <td>Growth Multiple</td>
