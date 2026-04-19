@@ -4728,12 +4728,12 @@ function updateStcgLtcgDisplay() {
 }
 
 function runIndiaUSSimulation() {
-  const startPF = parseFloat(document.getElementById('india-us-start-pf').value) || 4000000;
+  const startPF = parseFloat(document.getElementById('india-us-start-pf').value) || 7000000;
   const stcgPct = parseFloat(document.getElementById('india-us-stcg-slider').value) || 20;
   const ltcgPct = 100 - stcgPct;
   const indiaStcgRate = parseFloat(document.getElementById('india-us-india-stcg-rate').value) || 22;
   const indiaLtcgRate = parseFloat(document.getElementById('india-us-india-ltcg-rate').value) || 14;
-  const growthRate = parseFloat(document.getElementById('india-us-growth-rate').value) || 10;
+  const growthRate = parseFloat(document.getElementById('india-us-growth-rate').value) || 15;
 
   const years = 20;
   const results = [];
@@ -4799,18 +4799,21 @@ function renderIndiaUSResults(results, usTotalTax, indiaTotalTax, startPF) {
     const prevUS = index > 0 ? results[index - 1].usAfterTax : startPF;
     const prevIndia = index > 0 ? results[index - 1].indiaAfterTax : startPF;
 
-    const isMilestone = crossesMilestone(prevUS, r.usAfterTax) || crossesMilestone(prevIndia, r.indiaAfterTax);
-    const rowStyle = isMilestone ? ' style="background-color: #fffacd;"' : '';
+    const usMilestone = crossesMilestone(prevUS, r.usAfterTax);
+    const indiaMilestone = crossesMilestone(prevIndia, r.indiaAfterTax);
+
+    const usStyle = usMilestone ? ' style="background-color: #90EE90; font-weight: bold;"' : '';
+    const indiaStyle = indiaMilestone ? ' style="background-color: #FFD700; font-weight: bold;"' : '';
 
     return `
-    <tr${rowStyle}>
+    <tr>
       <td>Year ${r.year}</td>
       <td>${currency.format(Math.round(r.usPF))}</td>
       <td>${currency.format(Math.round(r.usTax))}</td>
-      <td>${currency.format(Math.round(r.usAfterTax))}</td>
+      <td${usStyle}>${currency.format(Math.round(r.usAfterTax))}</td>
       <td>${currency.format(Math.round(r.indiaPF))}</td>
       <td>${currency.format(Math.round(r.indiaTax))}</td>
-      <td>${currency.format(Math.round(r.indiaAfterTax))}</td>
+      <td${indiaStyle}>${currency.format(Math.round(r.indiaAfterTax))}</td>
       <td style="color: ${r.difference >= 0 ? 'green' : 'red'}">${r.difference >= 0 ? '+' : ''}${currency.format(Math.round(r.difference))}</td>
     </tr>
   `;
