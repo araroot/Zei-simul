@@ -32,12 +32,7 @@
         <button class="top-tab active" data-panel="panel-heatmap">Heatmap</button>
         <button class="top-tab" data-panel="panel-summary">2025 Summary Calculator</button>
         <button class="top-tab" data-panel="panel-builder">Return Builder</button>
-        <button class="top-tab" data-panel="panel-qdcg">QDCG Worksheet</button>
-        <button class="top-tab" data-panel="panel-schedule-d-worksheet">Schedule D Worksheet</button>
-        <button class="top-tab" data-panel="panel-amt-calculator">AMT Calculator</button>
-        <button class="top-tab" data-panel="panel-amt-form1116-passive">AMT Form 1116 Passive</button>
-        <button class="top-tab" data-panel="panel-form1116-line18">Form 1116 Line 18</button>
-        <button class="top-tab" data-panel="panel-line18-schedule-d">Line 18 Schedule D</button>
+        <button class="top-tab" data-panel="panel-india-vs-us">India vs US Simulation</button>
       </nav>
 
       <main>
@@ -596,381 +591,62 @@
           </div>
         </section>
 
-        <section id="panel-qdcg" class="tab-panel">
+        <section id="panel-india-vs-us" class="tab-panel">
           <div class="stack">
             <section class="card">
-              <h2>Qualified Dividends and Capital Gain Tax Worksheet—Line 16</h2>
-              <p class="hint">Built from the 2025 IRS general instructions worksheet. Complete Form 1040 or 1040-SR through line 15 before using it. This tab assumes 2025 MFJ and no Form 2555.</p>
+              <h2>India vs US Tax Simulation</h2>
+              <p class="hint">20-year projection comparing tax outcomes between India and US residence scenarios. Assumes portfolio growth from capital gains with annual taxation.</p>
+
               <div class="summary-grid">
-                <label class="field-inline"><span>Manual line 4 override</span><input id="qdcg-line4-override" type="number" step="1" /></label>
-                <label class="field-inline"><span>Manual line 5 override</span><input id="qdcg-line5-override" type="number" step="1" /></label>
+                <label class="field-inline"><span>Starting Portfolio (USD)</span><input id="india-us-start-pf" type="number" step="1" value="4000000" /></label>
+                <label class="field-inline"><span>STCG % (Short-term capital gains)</span><input id="india-us-stcg-pct" type="number" step="1" min="0" max="100" value="20" /></label>
+                <label class="field-inline"><span>LTCG % (Long-term capital gains)</span><input id="india-us-ltcg-pct" type="number" step="1" min="0" max="100" value="80" /></label>
+                <label class="field-inline"><span>India STCG Tax Rate %</span><input id="india-us-india-stcg-rate" type="number" step="0.1" value="22" /></label>
+                <label class="field-inline"><span>India LTCG Tax Rate %</span><input id="india-us-india-ltcg-rate" type="number" step="0.1" value="14" /></label>
+                <label class="field-inline"><span>Annual Portfolio Growth Rate %</span><input id="india-us-growth-rate" type="number" step="0.1" value="10" /></label>
               </div>
-              <div id="qdcg-status" class="status-box"></div>
+
+              <div class="actions-row">
+                <button id="india-us-calculate" class="btn">Calculate 20-Year Projection</button>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>20-Year Projection Comparison</h2>
+              <p class="hint">Side-by-side comparison showing portfolio value after taxes for each year. US taxes use current federal rates with NIIT. India taxes use rates specified above.</p>
               <div class="table-wrap">
-                <table class="summary-table">
+                <table class="summary-table" id="india-us-table">
                   <thead>
                     <tr>
-                      <th>Worksheet Line</th>
-                      <th>Value</th>
-                      <th>How Derived</th>
+                      <th>Year</th>
+                      <th>US Portfolio Value</th>
+                      <th>US Tax Paid</th>
+                      <th>US After-Tax Value</th>
+                      <th>India Portfolio Value</th>
+                      <th>India Tax Paid</th>
+                      <th>India After-Tax Value</th>
+                      <th>Difference (India - US)</th>
                     </tr>
                   </thead>
-                  <tbody id="qdcg-output"></tbody>
-                </table>
-              </div>
-            </section>
-          </div>
-        </section>
-
-        <section id="panel-schedule-d-worksheet" class="tab-panel">
-          <div class="stack">
-            <section class="card">
-              <h2>Schedule D Tax Worksheet—Line 16</h2>
-              <p class="hint">Built from the 2025 Instructions for Schedule D. Complete Form 1040 and Schedule D through line 19 before using it. This tab assumes 2025 MFJ and no Form 2555.</p>
-              <div class="summary-grid">
-                <label class="field-inline"><span>Form 4952 line 4g</span><input id="schedule-d-line3-input" type="number" step="1" /></label>
-                <label class="field-inline"><span>Form 4952 line 4e</span><input id="schedule-d-line4-input" type="number" step="1" /></label>
-                <label class="field-inline"><span>Schedule D line 18</span><input id="schedule-d-line18-input" type="number" step="1" /></label>
-                <label class="field-inline"><span>Schedule D line 19</span><input id="schedule-d-line19-input" type="number" step="1" /></label>
-              </div>
-              <div id="schedule-d-status" class="status-box"></div>
-              <div class="table-wrap">
-                <table class="summary-table">
-                  <thead>
-                    <tr>
-                      <th>Worksheet Line</th>
-                      <th>Value</th>
-                      <th>How Derived</th>
-                    </tr>
-                  </thead>
-                  <tbody id="schedule-d-output"></tbody>
-                </table>
-              </div>
-            </section>
-          </div>
-        </section>
-
-        <section id="panel-amt-calculator" class="tab-panel">
-          <div class="stack">
-            <section class="card">
-              <h2>AMT Calculator</h2>
-              <p class="hint">Focused on passive-income AMT. This tab builds Form 6251 from raw inputs, then computes the AMT capital-gains path using either the AMT QDCG worksheet or the AMT Schedule D Tax Worksheet.</p>
-            </section>
-
-            <section class="card">
-              <div class="builder-toolbar">
-                <div>
-                  <div class="builder-toolbar-title">AMT Inputs</div>
-                  <p class="builder-toolbar-copy">Enter regular-tax passive-income amounts and any AMT-only differences. The calculator uses the regular worksheet for Form 6251 lines 20 and 27, and the AMT worksheet for lines 13 through 15 and line 40.</p>
-                </div>
-              </div>
-
-              <div class="builder-sections">
-                <section class="builder-panel tone-deductions">
-                  <div class="builder-section-header">
-                    <div class="builder-section-title">Base Return Amounts</div>
-                    <p class="builder-section-copy">These are the non-passive inputs that drive Form 6251 lines 1 through 11.</p>
-                  </div>
-                  <div class="builder-grid">
-                    <label class="builder-field"><span class="field-title">Taxable income on your return</span><span class="field-help">Form 1040 line 15.</span><input id="amt-taxable-income" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">Deduction claimed on your return</span><span class="field-help">The deduction amount used to get from AGI to taxable income.</span><input id="amt-deduction-claimed" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">AMT deduction addback</span><span class="field-help">Usually SALT if you itemized, or the standard deduction amount if you did not.</span><input id="amt-line2a" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">Private-activity bond interest</span><span class="field-help">Tax-exempt bond interest that still counts for AMT.</span><input id="amt-bond-interest-calc" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">Other AMT adjustments</span><span class="field-help">Signed amount for all other AMT adjustments and preferences.</span><input id="amt-other-adjustments" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">Regular tax after regular FTC</span><span class="field-help">Form 6251 line 10.</span><input id="amt-regular-tax-comparison" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">AMT foreign tax credit</span><span class="field-help">Form 6251 line 8.</span><input id="amt-ftc-calc" type="number" step="1" /></label>
-                  </div>
-                </section>
-
-                <section class="builder-panel tone-passive">
-                  <div class="builder-section-header">
-                    <div class="builder-section-title">Regular Passive-Income Inputs</div>
-                    <p class="builder-section-copy">These are the regular-tax capital-gains and dividend amounts used for Form 6251 lines 20 and 27.</p>
-                  </div>
-                  <div class="builder-grid">
-                    <label class="builder-field"><span class="field-title">Regular qualified dividends</span><span class="field-help">Qualified dividends for the regular-tax worksheet.</span><input id="amt-regular-qualified-dividends" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">Regular short-term capital gain or loss</span><span class="field-help">Net short-term amount for the regular-tax worksheet.</span><input id="amt-regular-stcg" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">Regular long-term capital gain or loss</span><span class="field-help">Net long-term amount for the regular-tax worksheet.</span><input id="amt-regular-ltcg" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">Regular 25% rate gain</span><span class="field-help">Usually Schedule D line 19. Leave 0 if not applicable.</span><input id="amt-regular-25gain" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">Regular 28% rate gain</span><span class="field-help">Usually Schedule D line 18. Leave 0 if not applicable.</span><input id="amt-regular-28gain" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">Regular Form 4952 line 4g</span><span class="field-help">Investment-interest election amount for the regular worksheet.</span><input id="amt-regular-4952-4g" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">Regular Form 4952 line 4e</span><span class="field-help">Investment income amount used with Form 4952 line 4g.</span><input id="amt-regular-4952-4e" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">Regular worksheet type</span><span class="field-help">Use Auto unless you know the IRS worksheet that applies.</span><select id="amt-regular-worksheet-type"><option value="auto">Auto</option><option value="qdcg">QDCG worksheet</option><option value="schedule-d">Schedule D worksheet</option></select></label>
-                  </div>
-                </section>
-
-                <section class="builder-panel tone-general">
-                  <div class="builder-section-header">
-                    <div class="builder-section-title">AMT Differences From Regular</div>
-                    <p class="builder-section-copy">Enter only the differences between AMT and regular-tax passive-income amounts. Leave at 0 when AMT and regular are the same.</p>
-                  </div>
-                  <div class="builder-grid">
-                    <label class="builder-field"><span class="field-title">AMT adjustment to qualified dividends</span><span class="field-help">AMT qualified dividends minus regular qualified dividends.</span><input id="amt-diff-qualified-dividends" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">AMT adjustment to short-term gain or loss</span><span class="field-help">AMT short-term amount minus regular short-term amount.</span><input id="amt-diff-stcg" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">AMT adjustment to long-term gain or loss</span><span class="field-help">AMT long-term amount minus regular long-term amount.</span><input id="amt-diff-ltcg" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">AMT adjustment to 25% rate gain</span><span class="field-help">AMT 25% rate gain minus regular 25% rate gain.</span><input id="amt-diff-25gain" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">AMT adjustment to 28% rate gain</span><span class="field-help">AMT 28% rate gain minus regular 28% rate gain.</span><input id="amt-diff-28gain" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">AMT adjustment to Form 4952 line 4g</span><span class="field-help">AMT Form 4952 line 4g minus regular Form 4952 line 4g.</span><input id="amt-diff-4952-4g" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">AMT adjustment to Form 4952 line 4e</span><span class="field-help">AMT Form 4952 line 4e minus regular Form 4952 line 4e.</span><input id="amt-diff-4952-4e" type="number" step="1" /></label>
-                    <label class="builder-field"><span class="field-title">AMT worksheet type</span><span class="field-help">Use Auto unless you know the AMT worksheet that applies.</span><select id="amt-amt-worksheet-type"><option value="auto">Auto</option><option value="qdcg">AMT QDCG worksheet</option><option value="schedule-d">AMT Schedule D worksheet</option></select></label>
-                  </div>
-                </section>
-              </div>
-            </section>
-
-            <section class="card">
-              <div id="amtcalc-status" class="status-box"></div>
-              <div class="table-wrap">
-                <table class="summary-table">
-                  <thead>
-                    <tr>
-                      <th>AMT Summary</th>
-                      <th>Value</th>
-                      <th>How Derived</th>
-                    </tr>
-                  </thead>
-                  <tbody id="amtcalc-summary-output"></tbody>
+                  <tbody id="india-us-output"></tbody>
                 </table>
               </div>
             </section>
 
             <section class="card">
-              <h2>AMT Form 6251 Part I and Part II</h2>
+              <h2>Summary Metrics</h2>
               <div class="table-wrap">
                 <table class="summary-table">
                   <thead>
                     <tr>
-                      <th>Form 6251 Line</th>
-                      <th>Value</th>
-                      <th>How Derived</th>
+                      <th>Metric</th>
+                      <th>US Scenario</th>
+                      <th>India Scenario</th>
+                      <th>Difference</th>
                     </tr>
                   </thead>
-                  <tbody id="amtcalc-6251-output"></tbody>
+                  <tbody id="india-us-summary"></tbody>
                 </table>
-              </div>
-            </section>
-
-            <section class="card">
-              <h2>Regular Passive Worksheet</h2>
-              <div class="table-wrap">
-                <table class="summary-table">
-                  <thead>
-                    <tr>
-                      <th>Regular Worksheet Line</th>
-                      <th>Value</th>
-                      <th>How Derived</th>
-                    </tr>
-                  </thead>
-                  <tbody id="amtcalc-regular-worksheet-output"></tbody>
-                </table>
-              </div>
-            </section>
-
-            <section class="card">
-              <h2>AMT Passive Worksheet</h2>
-              <div class="table-wrap">
-                <table class="summary-table">
-                  <thead>
-                    <tr>
-                      <th>AMT Worksheet Line</th>
-                      <th>Value</th>
-                      <th>How Derived</th>
-                    </tr>
-                  </thead>
-                  <tbody id="amtcalc-amt-worksheet-output"></tbody>
-                </table>
-              </div>
-            </section>
-
-            <section class="card">
-              <h2>Form 6251 Part III</h2>
-              <div class="table-wrap">
-                <table class="summary-table">
-                  <thead>
-                    <tr>
-                      <th>Part III Line</th>
-                      <th>Value</th>
-                      <th>How Derived</th>
-                    </tr>
-                  </thead>
-                  <tbody id="amtcalc-part3-output"></tbody>
-                </table>
-              </div>
-            </section>
-          </div>
-        </section>
-
-        <section id="panel-amt-form1116-passive" class="tab-panel">
-          <div class="stack">
-            <section class="card">
-              <h2>AMT Form 1116 Passive</h2>
-              <p class="hint">This tab reads foreign passive income, taxes, and deductions from the Return Builder and reads Form 6251 values from the AMT Calculator. It is focused on the passive basket and traces the amount that can flow to Form 6251 line 8.</p>
-              <div class="summary-grid">
-                <label class="field-inline"><span>Simplified limitation election</span><select id="amt1116-simplified-election"><option value="no">No</option><option value="yes">Yes</option></select></label>
-                <label class="field-inline"><span>Manual AMT line 1a capital-gain amount</span><input id="amt1116-manual-line1a-capital" type="number" step="1" /></label>
-                <label class="field-inline"><span>Manual AMT line 5 capital-loss adjustment</span><input id="amt1116-manual-line5-loss" type="number" step="1" /></label>
-              </div>
-              <div id="amt1116-status" class="status-box"></div>
-            </section>
-
-            <section class="card">
-              <h2>Part I and II</h2>
-              <div class="table-wrap">
-                <table class="summary-table">
-                  <thead>
-                    <tr>
-                      <th>AMT Form 1116 Line</th>
-                      <th>Value</th>
-                      <th>How Derived</th>
-                    </tr>
-                  </thead>
-                  <tbody id="amt1116-output"></tbody>
-                </table>
-              </div>
-            </section>
-
-            <section class="card">
-              <h2>AMT Line 18 Worksheet</h2>
-              <div class="table-wrap">
-                <table class="summary-table">
-                  <thead>
-                    <tr>
-                      <th>Worksheet Line</th>
-                      <th>Value</th>
-                      <th>How Derived</th>
-                    </tr>
-                  </thead>
-                  <tbody id="amt1116-line18-output"></tbody>
-                </table>
-              </div>
-            </section>
-
-            <section class="card">
-              <h2>Part III and Part IV</h2>
-              <div class="table-wrap">
-                <table class="summary-table">
-                  <thead>
-                    <tr>
-                      <th>AMT Form 1116 Limit / Credit Line</th>
-                      <th>Value</th>
-                      <th>How Derived</th>
-                    </tr>
-                  </thead>
-                  <tbody id="amt1116-limit-output"></tbody>
-                </table>
-              </div>
-            </section>
-          </div>
-        </section>
-
-        <section id="panel-form1116-line18" class="tab-panel">
-          <div class="stack">
-            <section class="card">
-              <h2>Form 1116 Line 18 Worksheet</h2>
-              <p class="hint">This tab builds both versions of the line 18 worksheet: the regular Form 1116 worksheet and the AMT-modified worksheet. The regular side reads Return Builder and the QDCG / Schedule D tabs. The AMT side reads the AMT Calculator and AMT Form 1116 Passive tabs.</p>
-              <div id="line18-status" class="status-box"></div>
-            </section>
-
-            <section class="card">
-              <h2>Regular Form 1116 Line 18 Worksheet</h2>
-              <div class="table-wrap">
-                <table class="summary-table">
-                  <thead>
-                    <tr>
-                      <th>Worksheet Line</th>
-                      <th>Value</th>
-                      <th>How Derived</th>
-                    </tr>
-                  </thead>
-                  <tbody id="line18-regular-output"></tbody>
-                </table>
-              </div>
-            </section>
-
-            <section class="card">
-              <h2>AMT Form 1116 Line 18 Worksheet</h2>
-              <div class="table-wrap">
-                <table class="summary-table">
-                  <thead>
-                    <tr>
-                      <th>Worksheet Line</th>
-                      <th>Value</th>
-                      <th>How Derived</th>
-                    </tr>
-                  </thead>
-                  <tbody id="line18-amt-output"></tbody>
-                </table>
-              </div>
-            </section>
-          </div>
-        </section>
-
-        <section id="panel-line18-schedule-d" class="tab-panel">
-          <div class="stack">
-            <section class="card">
-              <h2>Taxable Income Limitation (Schedule D Path)</h2>
-              <p class="hint">Manual worksheet for the Form 1116 line 18 denominator when the taxpayer completed Schedule D, plus the AMT version when the taxpayer completed Part III of Form 6251. This tab is standalone and does not depend on the other tabs.</p>
-              <div id="line18-sd-status" class="status-box"></div>
-            </section>
-
-            <section class="card">
-              <div class="worksheet-side-by-side">
-                <div>
-                  <h2>Regular Form 1116 Inputs</h2>
-                  <div class="summary-grid">
-                    <label class="field-inline"><span>Line 1. Form 1040 line 15</span><input id="line18-sd-regular-line1" type="number" step="1" /></label>
-                    <label class="field-inline"><span>Line 2. Worldwide 28% gains</span><input id="line18-sd-regular-line2" type="number" step="1" /></label>
-                    <label class="field-inline"><span>Line 4. Worldwide 25% gains</span><input id="line18-sd-regular-line4" type="number" step="1" /></label>
-                    <label class="field-inline"><span>Line 6. Worldwide 20% gains &amp; qualified dividends</span><input id="line18-sd-regular-line6" type="number" step="1" /></label>
-                    <label class="field-inline"><span>Line 8. Worldwide 15% gains &amp; qualified dividends</span><input id="line18-sd-regular-line8" type="number" step="1" /></label>
-                    <label class="field-inline"><span>Line 10. Worldwide 0% gains &amp; qualified dividends</span><input id="line18-sd-regular-line10" type="number" step="1" /></label>
-                  </div>
-                </div>
-                <div>
-                  <h2>Regular Form 1116 Worksheet</h2>
-                  <div class="table-wrap">
-                    <table class="summary-table">
-                      <thead>
-                        <tr>
-                          <th>Line</th>
-                          <th>Value</th>
-                          <th>How Derived</th>
-                        </tr>
-                      </thead>
-                      <tbody id="line18-sd-regular-output"></tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section class="card">
-              <div class="worksheet-side-by-side">
-                <div>
-                  <h2>AMT Form 1116 Inputs</h2>
-                  <div class="summary-grid">
-                    <label class="field-inline"><span>Line 1. Form 6251 line 4</span><input id="line18-sd-amt-line1" type="number" step="1" /></label>
-                    <label class="field-inline"><span>Line 4. Worldwide 25% gains (Form 6251 line 36)</span><input id="line18-sd-amt-line4" type="number" step="1" /></label>
-                    <label class="field-inline"><span>Line 6. Worldwide 20% gains &amp; qualified dividends (Form 6251 line 33)</span><input id="line18-sd-amt-line6" type="number" step="1" /></label>
-                    <label class="field-inline"><span>Line 8. Worldwide 15% gains &amp; qualified dividends (Form 6251 line 30)</span><input id="line18-sd-amt-line8" type="number" step="1" /></label>
-                    <label class="field-inline"><span>Line 10. Worldwide 0% gains &amp; qualified dividends (Form 6251 line 23)</span><input id="line18-sd-amt-line10" type="number" step="1" /></label>
-                  </div>
-                </div>
-                <div>
-                  <h2>AMT Form 1116 Worksheet</h2>
-                  <div class="table-wrap">
-                    <table class="summary-table">
-                      <thead>
-                        <tr>
-                          <th>Line</th>
-                          <th>Value</th>
-                          <th>How Derived</th>
-                        </tr>
-                      </thead>
-                      <tbody id="line18-sd-amt-output"></tbody>
-                    </table>
-                  </div>
-                </div>
               </div>
             </section>
           </div>

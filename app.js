@@ -4633,21 +4633,238 @@ function bindTopTabs() {
   });
 }
 
+// India vs US Simulation
+function calculateUSTax(stcgAmount, ltcgAmount) {
+  // US federal tax rates for 2025 MFJ
+  // LTCG rates: 0%, 15%, 20% based on income brackets
+  // STCG taxed as ordinary income
+  // Simplified calculation using approximate brackets
+
+  const totalGains = stcgAmount + ltcgAmount;
+
+  // Ordinary income brackets (MFJ 2025 approximate)
+  const ordinaryRates = [
+    { limit: 23200, rate: 0.10 },
+    { limit: 94300, rate: 0.12 },
+    { limit: 201050, rate: 0.22 },
+    { limit: 383900, rate: 0.24 },
+    { limit: 487450, rate: 0.32 },
+    { limit: 731200, rate: 0.35 },
+    { limit: Infinity, rate: 0.37 }
+  ];
+
+  // LTCG brackets (MFJ 2025 approximate)
+  const ltcgBreakpoint15 = 94050;
+  const ltcgBreakpoint20 = 583750;
+
+  // Calculate STCG tax (ordinary rates)
+  let stcgTax = 0;
+  let remaining = stcgAmount;
+  for (const bracket of ordinaryRates) {
+    if (remaining <= 0) break;
+    const taxable = Math.min(remaining, bracket.limit - (stcgAmount - remaining));
+    stcgTax += taxable * bracket.rate;
+    remaining -= taxable;
+  }
+
+  // Calculate LTCG tax (preferential rates with stacking)
+  let ltcgTax = 0;
+  const ordinaryIncome = stcgAmount; // STCG is ordinary income
+
+  if (ordinaryIncome + ltcgAmount <= ltcgBreakpoint15) {
+    ltcgTax = 0; // 0% rate
+  } else if (ordinaryIncome >= ltcgBreakpoint20) {
+    ltcgTax = ltcgAmount * 0.20; // All at 20%
+  } else if (ordinaryIncome >= ltcgBreakpoint15) {
+    if (ordinaryIncome + ltcgAmount <= ltcgBreakpoint20) {
+      ltcgTax = ltcgAmount * 0.15; // All at 15%
+    } else {
+      const at15 = ltcgBreakpoint20 - ordinaryIncome;
+      const at20 = ltcgAmount - at15;
+      ltcgTax = at15 * 0.15 + at20 * 0.20;
+    }
+  } else {
+    // Ordinary income < ltcgBreakpoint15
+    const at0 = Math.max(0, ltcgBreakpoint15 - ordinaryIncome);
+    const remaining15and20 = ltcgAmount - at0;
+
+    if (ordinaryIncome + ltcgAmount <= ltcgBreakpoint20) {
+      ltcgTax = remaining15and20 * 0.15;
+    } else {
+      const at15 = Math.max(0, ltcgBreakpoint20 - Math.max(ordinaryIncome, ltcgBreakpoint15));
+      const at20 = ltcgAmount - at0 - at15;
+      ltcgTax = at15 * 0.15 + at20 * 0.20;
+    }
+  }
+
+  // Add NIIT (3.8% on investment income over threshold)
+  const niitThreshold = 250000; // MFJ
+  let niit = 0;
+  if (totalGains > niitThreshold) {
+    niit = (totalGains - niitThreshold) * 0.038;
+  }
+
+  return stcgTax + ltcgTax + niit;
+}
+
+function calculateIndiaTax(stcgAmount, ltcgAmount, stcgRate, ltcgRate) {
+  // India tax rates as percentage
+  const stcgTax = stcgAmount * (stcgRate / 100);
+  const ltcgTax = ltcgAmount * (ltcgRate / 100);
+  return stcgTax + ltcgTax;
+}
+
+function runIndiaUSSimulation() {
+  const startPF = parseFloat(document.getElementById('india-us-start-pf').value) || 4000000;
+  const stcgPct = parseFloat(document.getElementById('india-us-stcg-pct').value) || 20;
+  const ltcgPct = parseFloat(document.getElementById('india-us-ltcg-pct').value) || 80;
+  const indiaStcgRate = parseFloat(document.getElementById('india-us-india-stcg-rate').value) || 22;
+  const indiaLtcgRate = parseFloat(document.getElementById('india-us-india-ltcg-rate').value) || 14;
+  const growthRate = parseFloat(document.getElementById('india-us-growth-rate').value) || 10;
+
+  // Validate percentages
+  if (stcgPct + ltcgPct !== 100) {
+    alert('STCG % and LTCG % must add up to 100%');
+    return;
+  }
+
+  const years = 20;
+  const results = [];
+
+  let usPF = startPF;
+  let indiaPF = startPF;
+
+  let usTotalTax = 0;
+  let indiaTotalTax = 0;
+
+  for (let year = 1; year <= years; year++) {
+    // Calculate gains for the year
+    const usGains = usPF * (growthRate / 100);
+    const indiaGains = indiaPF * (growthRate / 100);
+
+    // Split into STCG and LTCG
+    const usStcg = usGains * (stcgPct / 100);
+    const usLtcg = usGains * (ltcgPct / 100);
+    const indiaStcg = indiaGains * (stcgPct / 100);
+    const indiaLtcg = indiaGains * (ltcgPct / 100);
+
+    // Calculate taxes
+    const usTax = calculateUSTax(usStcg, usLtcg);
+    const indiaTax = calculateIndiaTax(indiaStcg, indiaLtcg, indiaStcgRate, indiaLtcgRate);
+
+    // Update portfolios (gains - taxes)
+    usPF += usGains - usTax;
+    indiaPF += indiaGains - indiaTax;
+
+    usTotalTax += usTax;
+    indiaTotalTax += indiaTax;
+
+    results.push({
+      year,
+      usPF,
+      usTax,
+      usAfterTax: usPF,
+      indiaPF,
+      indiaTax,
+      indiaAfterTax: indiaPF,
+      difference: indiaPF - usPF
+    });
+  }
+
+  renderIndiaUSResults(results, usTotalTax, indiaTotalTax, startPF);
+}
+
+function renderIndiaUSResults(results, usTotalTax, indiaTotalTax, startPF) {
+  const output = document.getElementById('india-us-output');
+  const summary = document.getElementById('india-us-summary');
+
+  if (!output || !summary) return;
+
+  // Render year-by-year results
+  const rows = results.map(r => `
+    <tr>
+      <td>Year ${r.year}</td>
+      <td>${USD_INT.format(Math.round(r.usPF))}</td>
+      <td>${USD_INT.format(Math.round(r.usTax))}</td>
+      <td>${USD_INT.format(Math.round(r.usAfterTax))}</td>
+      <td>${USD_INT.format(Math.round(r.indiaPF))}</td>
+      <td>${USD_INT.format(Math.round(r.indiaTax))}</td>
+      <td>${USD_INT.format(Math.round(r.indiaAfterTax))}</td>
+      <td style="color: ${r.difference >= 0 ? 'green' : 'red'}">${r.difference >= 0 ? '+' : ''}${USD_INT.format(Math.round(r.difference))}</td>
+    </tr>
+  `).join('');
+
+  output.innerHTML = rows;
+
+  // Render summary
+  const finalUS = results[results.length - 1].usAfterTax;
+  const finalIndia = results[results.length - 1].indiaAfterTax;
+  const totalDifference = finalIndia - finalUS;
+  const usGrowthMultiple = (finalUS / startPF).toFixed(2);
+  const indiaGrowthMultiple = (finalIndia / startPF).toFixed(2);
+  const usEffectiveRate = ((usTotalTax / (finalUS + usTotalTax - startPF)) * 100).toFixed(2);
+  const indiaEffectiveRate = ((indiaTotalTax / (finalIndia + indiaTotalTax - startPF)) * 100).toFixed(2);
+
+  summary.innerHTML = `
+    <tr>
+      <td>Starting Portfolio</td>
+      <td>${USD_INT.format(startPF)}</td>
+      <td>${USD_INT.format(startPF)}</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td>Final Portfolio (Year 20)</td>
+      <td>${USD_INT.format(Math.round(finalUS))}</td>
+      <td>${USD_INT.format(Math.round(finalIndia))}</td>
+      <td style="color: ${totalDifference >= 0 ? 'green' : 'red'}">${totalDifference >= 0 ? '+' : ''}${USD_INT.format(Math.round(totalDifference))}</td>
+    </tr>
+    <tr>
+      <td>Total Tax Paid (20 years)</td>
+      <td>${USD_INT.format(Math.round(usTotalTax))}</td>
+      <td>${USD_INT.format(Math.round(indiaTotalTax))}</td>
+      <td style="color: ${indiaTotalTax < usTotalTax ? 'green' : 'red'}">${USD_INT.format(Math.round(indiaTotalTax - usTotalTax))}</td>
+    </tr>
+    <tr>
+      <td>Growth Multiple</td>
+      <td>${usGrowthMultiple}x</td>
+      <td>${indiaGrowthMultiple}x</td>
+      <td>${(indiaGrowthMultiple - usGrowthMultiple).toFixed(2)}x</td>
+    </tr>
+    <tr>
+      <td>Effective Tax Rate on Gains</td>
+      <td>${usEffectiveRate}%</td>
+      <td>${indiaEffectiveRate}%</td>
+      <td>${(indiaEffectiveRate - usEffectiveRate).toFixed(2)}%</td>
+    </tr>
+  `;
+}
+
+function bindIndiaUSEvents() {
+  const calcButton = document.getElementById('india-us-calculate');
+  if (calcButton) {
+    calcButton.addEventListener('click', runIndiaUSSimulation);
+  }
+}
+
 function boot() {
   try {
     bindTopTabs();
     refreshHeatmapTab();
     seedSummaryDefaults();
     seedBuilderDefaults();
-    seedAmtCalcDefaults();
     bindSummaryEvents();
     bindBuilderEvents();
-    bindAmtCalcEvents();
+    bindIndiaUSEvents();
     renderSummaryAssumptions();
     recalcSummary();
     recalcBuilder();
-    recalcAmtCalculator();
-    recalcLine18ScheduleDWorksheets();
+
+    // Auto-populate India vs US simulation with defaults
+    setTimeout(() => {
+      if (document.getElementById('india-us-output')) {
+        runIndiaUSSimulation();
+      }
+    }, 100);
   } catch (err) {
     if (sumOutput) {
       sumOutput.innerHTML = `<tr><td>Runtime error</td><td>${String(err)}</td><td>Check console for details.</td></tr>`;
